@@ -1,0 +1,1311 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Logické obvody</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: sticky bar with the two modes, a function strip (16 truth-table cells that double as test results), then either the schematic canvas or the module board photo-model. */
+:root{
+  --bg:#EDF0F4; --grid:#E3E8EE; --surface:#FFFFFF; --field:#F6F8FB;
+  --ink:#18202B; --muted:#586374; --line:#CDD5DE; --line-strong:#8A96A6;
+  --head:#E6EBF2;
+  --accent:#2250C8; --accent-ink:#FFFFFF;
+  --one-bg:#DCE6FB; --one-fg:#1B45B0; --x-bg:#FBEFD2; --x-fg:#85570A; --zero-fg:#6B7685;
+  --danger:#B3261E; --scrim:rgba(20,28,40,.55);
+  --ok-bg:#E1F2E5; --ok-fg:#1E6B34; --bad-bg:#FBE4E1; --bad-fg:#B3261E; --warn-bg:#FBEFD2; --warn-fg:#85570A;
+  --v0:#1C8A4A; --v1:#D0382A; --vx:#C17400;
+  --font-ui:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12171D; --grid:#171E26; --surface:#1A2129; --field:#141A21;
+    --ink:#E6EBF1; --muted:#97A3B2; --line:#2C3742; --line-strong:#5E6B7B;
+    --head:#222B35;
+    --accent:#7FA2FF; --accent-ink:#0E1726;
+    --one-bg:#243457; --one-fg:#B6CBFF; --x-bg:#3B3120; --x-fg:#EBBB62; --zero-fg:#7D8999;
+    --danger:#FF8A80; --scrim:rgba(0,0,0,.65);
+    --ok-bg:#1F3A2A; --ok-fg:#8FD6A4; --bad-bg:#432322; --bad-fg:#FF8A80; --warn-bg:#3B3120; --warn-fg:#EBBB62;
+    --v0:#4FC27F; --v1:#FF7A63; --vx:#F0B04A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12171D; --grid:#171E26; --surface:#1A2129; --field:#141A21;
+  --ink:#E6EBF1; --muted:#97A3B2; --line:#2C3742; --line-strong:#5E6B7B;
+  --head:#222B35;
+  --accent:#7FA2FF; --accent-ink:#0E1726;
+  --one-bg:#243457; --one-fg:#B6CBFF; --x-bg:#3B3120; --x-fg:#EBBB62; --zero-fg:#7D8999;
+  --danger:#FF8A80; --scrim:rgba(0,0,0,.65);
+  --ok-bg:#1F3A2A; --ok-fg:#8FD6A4; --bad-bg:#432322; --bad-fg:#FF8A80; --warn-bg:#3B3120; --warn-fg:#EBBB62;
+  --v0:#4FC27F; --v1:#FF7A63; --vx:#F0B04A;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  background:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+  color:var(--ink);
+  font:14px/1.45 var(--font-ui);
+  padding-inline:16px;
+  padding-block:12px 48px;
+}
+.wrap{max-width:1280px;margin-inline:auto;display:flex;flex-direction:column;gap:14px}
+h1,h2,h3,p{margin:0}
+
+.bar{
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:5;
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;
+  padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;
+}
+.bar h1{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.bar .sub{color:var(--muted);font-size:12.5px}
+.tabs{display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
+.tab{font:inherit;font-weight:500;height:36px;padding:0 18px;border:0;background:var(--surface);color:var(--ink);cursor:pointer}
+.tab+.tab{border-left:1px solid var(--line)}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+.tab:not([aria-selected="true"]):hover{background:var(--head)}
+
+.btn{
+  font:inherit;font-weight:500;height:34px;padding:0 12px;border-radius:8px;
+  border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+}
+.btn:hover:not(:disabled){background:var(--head)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover:not(:disabled){filter:brightness(1.08);background:var(--accent)}
+.btn.quiet{border-color:var(--line)}
+.btn.danger{color:var(--danger)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn[aria-pressed="true"]{background:var(--one-bg);border-color:var(--accent);color:var(--one-fg)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sq{width:34px;padding:0;justify-content:center;font:500 16px var(--font-mono)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
+.label{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--font-mono)}
+
+.fnrow{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-start;justify-content:space-between}
+.chips{display:inline-flex;flex-wrap:wrap;gap:6px}
+.chip{
+  font:500 14px var(--font-mono);height:34px;min-width:46px;padding:0 12px;border-radius:8px;
+  border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer;
+}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip:not([aria-pressed="true"]):hover{background:var(--head)}
+.fdesc{flex:1 1 560px;min-width:0;display:flex;flex-direction:column;gap:6px}
+.fn1{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font:14px var(--font-mono)}
+.fname{font:600 16px var(--font-mono);color:var(--accent)}
+.fn1 input{height:34px;border:1px solid var(--line-strong);border-radius:8px;padding:0 10px;background:var(--field);color:var(--ink);font:500 14px var(--font-mono);flex:1 1 150px;min-width:110px;max-width:340px}
+.fn1 input.bad{border-color:var(--danger);box-shadow:inset 0 0 0 1px var(--danger)}
+#fL1{flex:3 1 220px;max-width:420px}
+.fn2{font:13px/1.5 var(--font-mono);color:var(--muted);overflow-wrap:anywhere}
+.ferr{color:var(--bad-fg);font-size:12.5px}
+.ferr:empty{display:none}
+.chip.empty{border-style:dashed;color:var(--muted)}
+.chip.empty[aria-pressed="true"]{color:var(--accent-ink)}
+.strip{display:grid;grid-template-columns:repeat(16,minmax(0,1fr));gap:4px;margin-top:10px}
+.cell{
+  font:inherit;position:relative;display:flex;flex-direction:column;align-items:center;gap:0;
+  border:1px solid var(--line);border-radius:6px;background:var(--field);color:var(--ink);
+  padding:3px 0 4px;cursor:pointer;min-width:0;
+}
+.cell .ci{font:500 10.5px var(--font-mono);color:var(--muted)}
+.cell .cb{font:400 9.5px var(--font-mono);color:var(--muted);letter-spacing:.02em}
+.cell .cv{font:600 17px var(--font-mono);line-height:1.25}
+.cell .cr{font:600 11px var(--font-mono);min-height:13px;line-height:13px}
+.cell.v1 .cv{color:var(--one-fg)}
+.cell.v1{background:var(--one-bg)}
+.cell.vX{background:var(--x-bg)}
+.cell.vX .cv{color:var(--x-fg)}
+.cell.v0 .cv{color:var(--zero-fg);font-weight:400}
+.cell.cur{outline:2px solid var(--accent);outline-offset:1px}
+.cell.ok .cr{color:var(--ok-fg)}
+.cell.bad{border-color:var(--bad-fg);box-shadow:inset 0 0 0 1px var(--bad-fg)}
+.cell.bad .cr{color:var(--bad-fg)}
+.cell:hover{border-color:var(--line-strong)}
+@media (max-width:720px){.strip{grid-template-columns:repeat(8,minmax(0,1fr))}}
+.striptools{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:10px;color:var(--muted);font-size:12.5px}
+.est{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+.estout{color:var(--ink);font-size:13px}
+
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.tools .sep{width:1px;height:24px;background:var(--line)}
+.tools .grow{flex:1}
+.tools output{font:500 13px var(--font-mono);min-width:2ch;text-align:center}
+.say{min-height:20px;color:var(--muted);font-size:13px;margin-top:6px}
+.say.warn{color:var(--warn-fg)}
+
+.work{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:12px;align-items:start;margin-top:8px}
+@media (max-width:980px){.work{grid-template-columns:minmax(0,1fr)}}
+.canvasWrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  background-image:radial-gradient(var(--line) 1px,transparent 1.2px);background-size:20px 20px}
+#sch{display:block;width:100%;min-width:760px;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.boardWrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);max-height:78vh;margin-top:8px}
+#brd{display:block;user-select:none;-webkit-user-select:none}
+.side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.box h3{font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.msgs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.msgs li{display:grid;grid-template-columns:20px minmax(0,1fr);gap:6px;align-items:start}
+.msgs .mk{font:600 12px var(--font-mono);display:grid;place-items:center;height:20px;border-radius:5px}
+.msgs .ok .mk{background:var(--ok-bg);color:var(--ok-fg)}
+.msgs .bad .mk{background:var(--bad-bg);color:var(--bad-fg)}
+.msgs .warn .mk{background:var(--warn-bg);color:var(--warn-fg)}
+.msgs .info .mk{background:var(--head);color:var(--muted)}
+.use{display:flex;flex-direction:column;gap:5px;font-size:13px}
+.use .r{display:flex;justify-content:space-between;gap:10px}
+.use .r b{font:500 13px var(--font-mono)}
+.use .r.over b{color:var(--bad-fg)}
+.use .tot{border-top:1px solid var(--line);padding-top:6px;margin-top:2px}
+.gi-h{font-size:14px;margin-bottom:2px}
+.gi-h b{font:600 14px var(--font-mono);color:var(--accent)}
+.gi-r{display:flex;justify-content:space-between;gap:10px;font-size:13px;align-items:baseline}
+.gi-r span{color:var(--muted);flex:none}
+.gi-r b{font:500 13px var(--font-mono);text-align:right;overflow-wrap:anywhere;min-width:0}
+.gi-sub{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.gi-e{font:500 14px var(--font-mono);overflow-wrap:anywhere}
+#gateInfo{display:flex;flex-direction:column;gap:5px}
+.note{color:var(--muted);font-size:12.5px;max-width:64ch}
+.tray{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px;font-size:13px;color:var(--muted)}
+.tray .chip{height:32px}
+.row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+select.sel{height:34px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font:500 13px var(--font-mono);padding:0 8px}
+
+/* schematic */
+#sch .pin{fill:var(--surface);stroke:var(--line-strong);stroke-width:1.5}
+#sch .pin.pend{stroke:var(--accent);stroke-width:3}
+#sch .pin.free{stroke:var(--danger);stroke-dasharray:2 2;stroke-width:2}
+#sch .pin.spare{stroke:var(--muted);stroke-dasharray:2 2;stroke-width:1.5}
+#sch .gbody{fill:var(--field);stroke:var(--ink);stroke-width:1.6;cursor:grab}
+#sch .gbody.sel{stroke:var(--accent);stroke-width:3}
+#sch .glab{fill:var(--ink);font:600 15px var(--font-mono);text-anchor:middle;pointer-events:none}
+#sch .gline{stroke:var(--ink);stroke-width:1.6;fill:none;pointer-events:none}
+#sch .bubble{fill:var(--surface);stroke:var(--ink);stroke-width:1.6;pointer-events:none}
+#sch .wire{fill:none;stroke:var(--ink);stroke-width:2;pointer-events:none}
+#sch .wire.sel{stroke:var(--accent);stroke-width:3.4}
+#sch .whit{fill:none;stroke:transparent;stroke-width:14;cursor:pointer;pointer-events:stroke}
+#sch .tag{fill:var(--ink);font:500 14px var(--font-mono);pointer-events:none}
+#sch .hnum{fill:var(--muted);font:500 11.5px var(--font-mono);pointer-events:none}
+#sch .tagm{fill:var(--muted);font:400 11.5px var(--font-ui);pointer-events:none}
+#sch .sw{cursor:pointer}
+#sch .swbody{fill:var(--field);stroke:var(--line-strong);stroke-width:1.5}
+#sch .sw:hover .swbody{stroke:var(--accent)}
+#sch .vb{font:600 12px var(--font-mono);text-anchor:middle;fill:#fff;pointer-events:none}
+#sch .vtxt{font:600 12px var(--font-mono);pointer-events:none}
+#sch .outbox{fill:var(--field);stroke:var(--line-strong);stroke-width:1.5}
+#sch .empty{fill:var(--muted);font:400 14px var(--font-ui);text-anchor:middle;pointer-events:none}
+#sch .phit{fill:transparent;cursor:crosshair}
+
+/* board hit areas */
+#brd .hhit{fill:transparent;cursor:crosshair}
+#brd .hhit:hover + .hring{stroke:var(--accent)}
+#brd .mbar{cursor:pointer}
+#brd text{pointer-events:none}
+</style>
+
+<div class="wrap">
+  <header class="bar">
+    <div>
+      <h1>Logické obvody</h1>
+      <div class="sub">Funkce z hradel NAND a NOT: nejdřív schéma, potom zapojení na desce</div>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Režim">
+      <button class="tab" id="tabSchema" role="tab" data-mode="schema">Schéma</button>
+      <button class="tab" id="tabBoard" role="tab" data-mode="board">Deska</button>
+    </div>
+  </header>
+
+  <section class="panel" aria-label="Funkce">
+    <div class="fnrow">
+      <div class="chips" id="fnChips" role="group" aria-label="Funkce"></div>
+      <div class="fdesc" id="fnDesc"></div>
+    </div>
+    <div class="strip" id="strip"></div>
+    <div class="striptools">
+      <span id="stripHelp">Klikni na buňku a nastavíš vstupy na tuto kombinaci (x3 x2 x1 x0). Po kontrole ukáže ✓ a ✗.</span>
+      <button class="btn quiet" id="btnEdit" aria-pressed="false">Upravit hodnoty</button>
+      <span class="est"><button class="btn quiet" id="btnEst" aria-pressed="false">Ukázat odhad minima</button><span class="estout" id="estOut"></span></span>
+    </div>
+  </section>
+
+  <section id="modeSchema" hidden>
+    <div class="tools" id="schTools">
+      <button class="btn" id="addNand">+ NAND</button>
+      <button class="btn" id="addNot">+ NOT</button>
+      <span class="sep"></span>
+      <span class="row" id="selCtl"></span>
+      <span class="grow"></span>
+      <button class="btn quiet" id="liveS" aria-pressed="true">Hodnoty na drátech</button>
+      <button class="btn quiet danger" id="clearS">Vyčistit schéma</button>
+    </div>
+    <div class="say" id="saySch" role="status"></div>
+    <div class="work">
+      <div class="canvasWrap"><svg id="sch" viewBox="0 0 1000 560" role="img" aria-label="Plátno schématu"></svg></div>
+      <aside class="side">
+        <div class="box">
+          <h3>Vybrané hradlo</h3>
+          <div id="gateInfo"></div>
+        </div>
+        <div class="box">
+          <h3>Kontrola</h3>
+          <button class="btn primary" id="chkS">Zkontrolovat všech 16 kombinací</button>
+          <ul class="msgs" id="msgS"></ul>
+        </div>
+        <div class="box">
+          <h3>Spotřeba hradel</h3>
+          <div class="use" id="useS"></div>
+          <p class="note">Počítá se podle modulů na desce: jedna 7404 (6× NOT), dvě 7400 (8× NAND se 2 vstupy), dvě 7420 (4× NAND se 4 vstupy) a jedna 7430 (NAND s 8 vstupy).</p>
+        </div>
+        <div class="box">
+          <h3>Jak se to ovládá</h3>
+          <p class="note">Klikni na výstupní bod (vpravo od vstupu nebo hradla) a potom na vstupní bod hradla. Hradlo přesuneš tažením, smažeš ho klávesou Delete. Dráty vybíráš kliknutím.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="modeBoard" hidden>
+    <div class="tools" id="brdTools">
+      <button class="btn" id="autoPow" title="Připojí zdroj k desce a napájí selektor, probe a moduly, do kterých vedou dráty">Zapojit napájení</button>
+      <span class="sep"></span>
+      <button class="btn" id="delWire" disabled>Smazat drát</button>
+      <button class="btn" id="pullMod" disabled>Vyndat modul</button>
+      <span class="grow"></span>
+      <button class="btn quiet" id="liveB" aria-pressed="false">Hodnoty na drátech</button>
+      <button class="btn quiet sq" id="zoomOut" aria-label="Oddálit">−</button>
+      <output id="zoomVal" class="mono"></output>
+      <button class="btn quiet sq" id="zoomIn" aria-label="Přiblížit">+</button>
+      <button class="btn quiet danger" id="clearB">Vyčistit dráty</button>
+    </div>
+    <div class="say" id="sayBrd" role="status"></div>
+    <div class="boardWrap" id="boardWrap"><svg id="brd" role="img" aria-label="Deska s moduly"></svg></div>
+    <div class="tray" id="tray"></div>
+    <div class="work">
+      <div class="box">
+        <h3>Kontrola</h3>
+        <div class="row">
+          <button class="btn primary" id="chkB">Zkontrolovat všech 16 kombinací</button>
+          <label class="row" for="probeSel" style="gap:6px;font-size:13px;color:var(--muted)">Výstup čtu z probe vstupu
+            <select class="sel" id="probeSel"></select></label>
+        </div>
+        <ul class="msgs" id="msgB"></ul>
+      </div>
+      <aside class="side">
+        <div class="box">
+          <h3>Jak se to ovládá</h3>
+          <p class="note">Klikni na zásuvku a potom na druhou zásuvku, vznikne drát. Každá zásuvka má dvě díry, do každé jde jeden drát. Tlačítka selektoru přepínají vstupy. Modul přesuneš tak, že ho chytneš za popisek dole a klikneš na jiné místo.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const LS_KEY='logicke-obvody-v1';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ===================== logic basics ===================== */
+const nandV=a=>a.some(v=>v===0)?1:(a.some(v=>v==='X')?'X':0);
+const notV=v=>v==='X'?'X':1-v;
+const bitsOf=i=>[i&1,(i>>1)&1,(i>>2)&1,(i>>3)&1];          /* [x0,x1,x2,x3] */
+const bin4=i=>[(i>>3)&1,(i>>2)&1,(i>>1)&1,i&1].join('');
+
+const FDEF={
+  F0:{form:'P',M:[6,7,10,12,13,15],D:[3,9]},
+  F1:{form:'S',m:[6,9,10,11,12,14],d:[2,8]},
+  F2:{form:'S',m:[0,1,2,3,4,5,8,15],d:[6,7,11,13]},
+  F3:{form:'S',m:[1,3,4,6,7,9],d:[10]},
+  F4:{form:'P',M:[0,2,5,9,10,12,14,15],D:[3,11]},
+  F5:{form:'P',M:[0,1,3,7,9,10,13],D:[11,14]}
+};
+const FKEYS=['F0','F1','F2','F3','F4','F5','custom'];
+
+/* ===================== state ===================== */
+const state={fn:'F0',mode:'schema',cur:0,defs:{},forms:{},per:{},zoom:null,edit:false,showEst:false,liveS:true,liveB:false};
+const ui={sel:null,pend:null,drag:null,skipClick:false,bSel:null,bMod:null,bPend:null,chkS:null,chkB:null,saySch:'',sayBrd:'',sayWarn:false,confirm:null};
+
+function seedTarget(k){
+  const f=FDEF[k], t=Array(16).fill(null);
+  if(f.form==='S'){ t.fill(0); f.m.forEach(i=>t[i]=1); f.d.forEach(i=>t[i]='X'); }
+  else { t.fill(1); f.M.forEach(i=>t[i]=0); f.D.forEach(i=>t[i]='X'); }
+  return t;
+}
+function targetOf(key){ const d=state.defs[key||state.fn]; return d?d.t.slice():Array(16).fill(0); }
+const isFilled=k=>!!state.defs[k||state.fn];
+const formOf=k=>state.forms[k||state.fn]||'S';
+const fnName=k=>k==='custom'?'F':k;
+const chipName=k=>k==='custom'?'Cvičení':k;
+function listOf(t,v){ const r=[]; t.forEach((x,i)=>{ if(x===v) r.push(i); }); return r; }
+function listsFor(t,form){ const a=[],b=[]; t.forEach((v,i)=>{ if(v==='X') b.push(i); else if(form==='S'?v===1:v===0) a.push(i); }); return {a,b}; }
+function buildT(form,a,b){ const t=Array(16).fill(form==='S'?0:1); a.forEach(i=>t[i]=form==='S'?1:0); b.forEach(i=>t[i]='X'); return t; }
+function parseList(str){
+  const parts=String(str).split(/[\s,;]+/).filter(Boolean), nums=[];
+  for(const p of parts){
+    if(!/^\d+$/.test(p)) return {err:'„'+p+'“ není číslo'};
+    const n=+p; if(n>15) return {err:n+' je mimo rozsah 0 až 15'};
+    if(nums.includes(n)) return {err:'číslo '+n+' se opakuje'};
+    nums.push(n);
+  }
+  return {nums:nums.sort((x,y)=>x-y)};
+}
+function applyNums(key,form,a,b){
+  state.forms[key]=form;
+  if(!a.length&&!b.length) delete state.defs[key]; else state.defs[key]={t:buildT(form,a,b)};
+}
+
+/* ---------- schematic data ---------- */
+const YIN={0:390,1:290,2:190,3:90};
+const OUTP={x:872,y:240};
+const NSIZES=[2,4,8];
+const fitN=n=>NSIZES.find(a=>a>=n)||8;
+function newSch(){ return {gates:[],wires:[],next:1}; }
+
+/* ---------- board data ---------- */
+const SLOT=156, X0=140, MODW=146, MODY=150, MODH=330, BW=X0+8*SLOT+12, BH=530;
+const MOD_IDS=['sel','probe','n04','n00a','n00b','n20a','n20b','n30'];
+const ORDER0=['sel','n04','n00a','n20a','n20b','n00b','n30','probe'];
+const MOD_INFO={
+  sel:{kind:'sel',name:'Selektor',label:'SELECTOR',tag:''},
+  probe:{kind:'probe',name:'Probe',label:'PROBE',tag:''},
+  n04:{kind:'7404',name:'7404',label:'7404',tag:''},
+  n00a:{kind:'7400',name:'7400 A',label:'7400',tag:'A'},
+  n00b:{kind:'7400',name:'7400 B',label:'7400',tag:'B'},
+  n20a:{kind:'7420',name:'7420 A',label:'7420',tag:'A'},
+  n20b:{kind:'7420',name:'7420 B',label:'7420',tag:'B'},
+  n30:{kind:'7430',name:'7430',label:'7430',tag:''}
+};
+const ROWY=[64,92,120,148,192,220,248,276];
+function gateGeo(kind){
+  const g=[];
+  if(kind==='7404'){ for(let k=0;k<6;k++){ const y=70+k*40; g.push({ins:[y],out:y,box:[y-12,y+12],lab:'1'}); } }
+  else if(kind==='7400'){ for(let k=0;k<4;k++){ const b=62+k*58; g.push({ins:[b,b+22],out:b+11,box:[b-4,b+26],lab:'&'}); } }
+  else if(kind==='7420'){ [62,190].forEach(b=>g.push({ins:[b,b+22,b+44,b+66],out:b+33,box:[b-4,b+70],lab:'&'})); }
+  else if(kind==='7430'){ g.push({ins:[0,1,2,3,4,5,6,7].map(k=>60+26*k),out:156,box:[50,252],lab:'&'}); }
+  return g;
+}
+const HOLES={};
+function addH(node,mod,dx,dy,role,nh){ for(let h=0;h<nh;h++) HOLES[node+'#'+h]={node,mod,dx:dx+16*h,dy,role,h}; }
+MOD_IDS.forEach(id=>{
+  const k=MOD_INFO[id].kind;
+  addH(id+'.vcc',id,20,28,'vcc',1); addH(id+'.gnd',id,126,28,'gnd',1);
+  if(k==='sel'){ for(let r=0;r<8;r++) addH('sel.A'+r,id,114,ROWY[r],'out',2); }
+  else if(k==='probe'){ for(let r=0;r<8;r++) addH('probe.A'+r,id,16,ROWY[r],'in',2); }
+  else gateGeo(k).forEach((g,gi)=>{
+    g.ins.forEach((y,ii)=>addH(id+'.g'+gi+'.i'+ii,id,16,y,'in',2));
+    addH(id+'.g'+gi+'.o',id,114,g.out,'out',2);
+  });
+});
+const BOFF={g:[12,28],v:[56,72],j:[100,114,128,142]};
+function modX(s){ return X0+s*SLOT+(SLOT-MODW)/2; }
+function nodeOf(id){
+  if(id==='S+#0') return 'S+'; if(id==='S-#0') return 'S-';
+  if(id[0]==='B'){ const m=/^B(\d+)\.([vgj])#/.exec(id); return m[2]==='v'?'B+':(m[2]==='g'?'B-':'B'+m[1]+'.j'); }
+  return HOLES[id].node;
+}
+function posOf(id,B){
+  if(id==='S+#0') return {x:36,y:100};
+  if(id==='S-#0') return {x:92,y:100};
+  const m=/^B(\d+)\.([vgj])#(\d+)$/.exec(id);
+  if(m) return {x:X0+(+m[1])*SLOT+BOFF[m[2]][+m[3]],y:102};
+  const h=HOLES[id]; if(!h) return null;
+  const s=B.slots.indexOf(h.mod); if(s<0) return null;
+  return {x:modX(s)+h.dx,y:MODY+h.dy};
+}
+function newBrd(){ return {slots:ORDER0.slice(),wires:[],next:1,probeOut:0,hi:[0,0,0,0]}; }
+
+function per(){
+  const k=state.fn;
+  if(!state.per[k]) state.per[k]={};
+  const p=state.per[k];
+  if(!p.sch) p.sch=newSch();
+  if(!p.brd) p.brd=newBrd();
+  return p;
+}
+
+/* ===================== persistence ===================== */
+let saveT=null;
+function save(){
+  clearTimeout(saveT);
+  saveT=setTimeout(()=>{ try{ localStorage.setItem(LS_KEY,JSON.stringify({fn:state.fn,mode:state.mode,cur:state.cur,defs:state.defs,forms:state.forms,per:state.per,zoom:state.zoom,liveS:state.liveS,liveB:state.liveB})); }catch(e){} },150);
+}
+function load(){
+  try{
+    const raw=localStorage.getItem(LS_KEY); if(!raw) return;
+    const d=JSON.parse(raw);
+    if(d.fn&&FKEYS.includes(d.fn)) state.fn=d.fn;
+    if(d.mode==='board'||d.mode==='schema') state.mode=d.mode;
+    if(Number.isInteger(d.cur)&&d.cur>=0&&d.cur<16) state.cur=d.cur;
+    const okT=t=>Array.isArray(t)&&t.length===16&&t.every(v=>v===0||v===1||v==='X');
+    if(d.defs&&typeof d.defs==='object'){
+      FKEYS.forEach(k=>{ if(d.defs[k]&&okT(d.defs[k].t)) state.defs[k]={t:d.defs[k].t.slice()}; });
+      if(d.forms&&typeof d.forms==='object') FKEYS.forEach(k=>{ if(d.forms[k]==='S'||d.forms[k]==='P') state.forms[k]=d.forms[k]; });
+    } else {
+      /* save from the earlier version: keep the functions that were built in */
+      Object.keys(FDEF).forEach(k=>{ state.defs[k]={t:seedTarget(k)}; state.forms[k]=FDEF[k].form; });
+      if(okT(d.custom)&&d.custom.some(v=>v!==0)) state.defs.custom={t:d.custom.slice()};
+    }
+    if(d.per&&typeof d.per==='object'){
+      Object.keys(d.per).forEach(k=>{
+        const p=d.per[k]; if(!p||!FKEYS.includes(k)) return;
+        const out={};
+        if(p.sch&&Array.isArray(p.sch.gates)&&Array.isArray(p.sch.wires)) out.sch={gates:p.sch.gates.map(g=>g&&g.type==='NAND'?Object.assign({},g,{n:fitN(g.n|0)}):g),wires:p.sch.wires,next:p.sch.next||100};
+        if(p.brd&&Array.isArray(p.brd.slots)&&p.brd.slots.length===8&&Array.isArray(p.brd.wires)){
+          const okSlots=p.brd.slots.every(s=>s===null||MOD_IDS.includes(s));
+          const okW=p.brd.wires.every(w=>(w.a in HOLES||/^(S[+-]#0|B\d\.[vgj]#\d)$/.test(w.a))&&(w.b in HOLES||/^(S[+-]#0|B\d\.[vgj]#\d)$/.test(w.b)));
+          if(okSlots&&okW) out.brd={slots:p.brd.slots,wires:p.brd.wires,next:p.brd.next||100,probeOut:p.brd.probeOut|0,hi:Array.isArray(p.brd.hi)&&p.brd.hi.length===4?p.brd.hi.map(v=>v?1:0):[0,0,0,0]};
+        }
+        state.per[k]=out;
+      });
+    }
+    if(typeof d.zoom==='number') state.zoom=d.zoom;
+    if(typeof d.liveS==='boolean') state.liveS=d.liveS;
+    if(typeof d.liveB==='boolean') state.liveB=d.liveB;
+  }catch(e){}
+}
+
+/* ===================== minimum estimate (NAND-NAND from a sum) ===================== */
+function minEstimate(t){
+  const ones=[],dc=[];
+  t.forEach((v,i)=>{ if(v===1) ones.push(i); else if(v==='X') dc.push(i); });
+  if(!ones.length) return {kind:'zero'};
+  if(ones.length+dc.length===16) return {kind:'one'};
+  let cur=new Map(); ones.concat(dc).forEach(i=>cur.set(i+':0',{v:i,m:0}));
+  let primes=[];
+  while(cur.size){
+    const arr=Array.from(cur.values()), used=new Set(), next=new Map();
+    for(let a=0;a<arr.length;a++) for(let b=a+1;b<arr.length;b++){
+      const x=arr[a],y=arr[b]; if(x.m!==y.m) continue;
+      const d=x.v^y.v; if(d&&!(d&(d-1))){ used.add(a); used.add(b); const m=x.m|d,v=x.v&~d; next.set(v+':'+m,{v,m}); }
+    }
+    arr.forEach((x,i)=>{ if(!used.has(i)) primes.push(x); });
+    cur=next;
+  }
+  const seen=new Set(); primes=primes.filter(p=>{ const k=p.v+':'+p.m; if(seen.has(k)) return false; seen.add(k); return true; });
+  if(primes.length>20) return {kind:'skip'};
+  const cov=primes.map(p=>ones.reduce((acc,i,ix)=>((i&~p.m)===p.v?acc|(1<<ix):acc),0));
+  const all=(1<<ones.length)-1;
+  const lits=p=>{ const L=[]; for(let k=0;k<4;k++) if(!((p.m>>k)&1)) L.push({k,pos:(p.v>>k)&1}); return L; };
+  let best=null;
+  for(let mask=1;mask<(1<<primes.length);mask++){
+    let c=0; const sel=[];
+    for(let i=0;i<primes.length;i++) if(mask&(1<<i)){ c|=cov[i]; sel.push(primes[i]); }
+    if(c!==all) continue;
+    const terms=sel.map(lits);
+    const nT=terms.length; let nand=0,sumIn=0; const nots=new Set();
+    terms.forEach(L=>{
+      sumIn+=L.length;
+      if(L.length>=2){ nand++; L.forEach(l=>{ if(!l.pos) nots.add(l.k); }); }
+      else if(L.length===1){ if(nT>=2){ if(L[0].pos) nots.add(L[0].k); } else if(!L[0].pos) nots.add(L[0].k); }
+    });
+    let outNand=0,outNot=0;
+    if(nT>=2) outNand=1; else if(terms[0].length>=2) outNot=1;
+    const total=nand+outNand+outNot+nots.size;
+    if(!best||total<best.total||(total===best.total&&sumIn<best.sumIn)) best={total,sumIn,nand:nand+outNand,not:nots.size+outNot};
+  }
+  return best?{kind:'ok',...best}:{kind:'skip'};
+}
+
+/* ===================== shared UI: function panel ===================== */
+function fmtList(a){ return a.length?a.join(', '):'–'; }
+function chipsHtml(){
+  return FKEYS.map(k=>`<button class="chip${isFilled(k)?'':' empty'}" data-fn="${k}" aria-pressed="${state.fn===k}" title="${isFilled(k)?'':'Prázdná funkce, zadej ji'}">${chipName(k)}</button>`).join('');
+}
+function altText(t,form){
+  const o=listsFor(t,form==='S'?'P':'S');
+  return form==='S'?`= Π M(${fmtList(o.a)}) · Π D(${fmtList(o.b)})`:`= Σ m(${fmtList(o.a)}) + Σ d(${fmtList(o.b)})`;
+}
+function renderNote(){
+  const k=state.fn, t=targetOf(), form=formOf(), L=listsFor(t,form), filled=isFilled();
+  const sym=form==='S'?['Σ m(',') + Σ d(',')']:['Π M(',') · Π D(',')'];
+  $('#fnDesc').innerHTML=`<div class="fn1"><span class="fname">${fnName(k)}</span><span>=</span>
+    <select class="sel" id="fForm" aria-label="Tvar zápisu"><option value="S"${form==='S'?' selected':''}>Minterm (Σ m + Σ d)</option><option value="P"${form==='P'?' selected':''}>Maxterm (Π M · Π D)</option></select>
+    <span>${sym[0]}</span><input id="fL1" type="text" inputmode="numeric" autocomplete="off" placeholder="např. 1, 4, 6" aria-label="${form==='S'?'Čísla m':'Čísla M'}" value="${filled?L.a.join(', '):''}">
+    <span>${sym[1]}</span><input id="fL2" type="text" inputmode="numeric" autocomplete="off" placeholder="neurčené" aria-label="${form==='S'?'Čísla d':'Čísla D'}" value="${filled?L.b.join(', '):''}"><span>${sym[2]}</span>
+    <button class="btn quiet" id="btnClearFn" ${filled?'':'disabled'}>Vymazat funkci</button></div>
+    <div class="fn2" id="fnAlt">${filled?esc(altText(t,form)):'Zadej čísla do závorek, nebo zapni Upravit hodnoty a klikej na tabulku.'}</div>
+    <div class="ferr" id="fnErr" role="alert"></div>`;
+}
+function renderFn(){
+  $('#fnChips').innerHTML=chipsHtml();
+  renderNote();
+  $('#btnEdit').setAttribute('aria-pressed',String(state.edit));
+  $('#stripHelp').textContent=state.edit
+    ?'Klikáním na buňku přepínáš hodnotu 0 → 1 → X. Vypni Upravit hodnoty, až budeš chtít nastavovat vstupy.'
+    :'Klikni na buňku a nastavíš vstupy na tuto kombinaci (x3 x2 x1 x0). Po kontrole ukáže ✓ a ✗.';
+  renderStrip();
+  renderEst();
+}
+function renderStrip(){
+  const t=targetOf();
+  const chk=state.mode==='schema'?ui.chkS:ui.chkB;
+  let h='';
+  for(let i=0;i<16;i++){
+    const v=t[i];
+    let cls='cell v'+v+(i===state.cur?' cur':'');
+    let mark='';
+    if(chk&&chk.res){ const r=chk.res[i]; if(v==='X'){ mark='–'; } else if(r.ok){ cls+=' ok'; mark='✓'; } else { cls+=' bad'; mark='✗'; } }
+    h+=`<button class="${cls}" data-i="${i}" title="i = ${i}  (x3 x2 x1 x0 = ${bin4(i)})"><span class="ci">${i}</span><span class="cb">${bin4(i)}</span><span class="cv">${v}</span><span class="cr">${mark}</span></button>`;
+  }
+  $('#strip').innerHTML=h;
+}
+function renderEst(){
+  $('#btnEst').setAttribute('aria-pressed',String(state.showEst));
+  const out=$('#estOut');
+  if(!state.showEst){ out.textContent=''; return; }
+  if(!isFilled()){ out.textContent='Nejdřív zadej funkci.'; return; }
+  const e=minEstimate(targetOf());
+  if(e.kind==='ok') out.textContent=`NAND-NAND ze součtu: nejméně ${e.total} hradel (${e.nand}× NAND, ${e.not}× NOT).`;
+  else if(e.kind==='zero') out.textContent='Funkce je stále 0, hradla nejsou potřeba.';
+  else if(e.kind==='one') out.textContent='Funkce je stále 1, hradla nejsou potřeba.';
+  else out.textContent='Odhad se nepodařilo spočítat.';
+}
+/* after the function definition changed */
+function afterDef(live){
+  ui.chkS=null; ui.chkB=null; save();
+  if(!live){ renderAll(); return; }
+  $('#fnChips').innerHTML=chipsHtml();
+  const t=targetOf(), filled=isFilled();
+  $('#fnAlt').textContent=filled?altText(t,formOf()):'Zadej čísla do závorek, nebo zapni Upravit hodnoty a klikej na tabulku.';
+  $('#btnClearFn').disabled=!filled;
+  renderStrip(); renderEst();
+  if(state.mode==='schema') renderSchema(); else renderBoard();
+}
+function readNote(){
+  const form=formOf(), r1=parseList($('#fL1').value), r2=parseList($('#fL2').value);
+  const nm=form==='S'?['m','d']:['M','D'];
+  const err=$('#fnErr'); let msg='';
+  if(r1.err) msg=`V závorce ${nm[0]}: ${r1.err}.`;
+  else if(r2.err) msg=`V závorce ${nm[1]}: ${r2.err}.`;
+  else { const both=r1.nums.filter(n=>r2.nums.includes(n)); if(both.length) msg=`Číslo ${both[0]} je v obou závorkách (${nm[0]} i ${nm[1]}).`; }
+  $('#fL1').classList.toggle('bad',!!r1.err||(!!msg&&!r2.err)); $('#fL2').classList.toggle('bad',!!r2.err||(!!msg&&!r1.err));
+  err.textContent=msg;
+  if(msg) return false;
+  applyNums(state.fn,form,r1.nums,r2.nums);
+  afterDef(true); return true;
+}
+
+/* ===================== SCHEMATIC ===================== */
+const gW=g=>g.type==='NOT'?40:54;
+const gH=g=>g.type==='NOT'?34:Math.max(46,g.n*18+8);
+const nIn=g=>g.type==='NOT'?1:g.n;
+function inPos(g,k){ const n=nIn(g),h=gH(g); return {x:g.x-12,y:g.y+h*(k+0.5)/n}; }
+function outPos(g){ return {x:g.x+gW(g)+16,y:g.y+gH(g)/2}; }
+function gateById(S,id){ return S.gates.find(g=>g.id===id); }
+function pinPos(S,pin){
+  if(pin.startsWith('in:')) return {x:96,y:YIN[+pin.slice(3)]};
+  if(pin==='out') return OUTP;
+  const m=/^g(\d+):(o|i(\d+))$/.exec(pin); if(!m) return null;
+  const g=gateById(S,+m[1]); if(!g) return null;
+  return m[2]==='o'?outPos(g):inPos(g,+m[3]);
+}
+const isOutPin=p=>p.startsWith('in:')||/:o$/.test(p);
+const gateOfPin=p=>{ const m=/^g(\d+):/.exec(p); return m?+m[1]:null; };
+
+function evalSchema(S,vars){
+  const byTo={}; S.wires.forEach(w=>byTo[w.to]=w.from);
+  const memo={},stack={}; let loop=false;
+  function val(pin){
+    if(pin.startsWith('in:')) return vars[+pin.slice(3)];
+    if(pin in memo) return memo[pin];
+    if(stack[pin]){ loop=true; return 'X'; }
+    stack[pin]=1;
+    const gid=gateOfPin(pin), g=gateById(S,gid);
+    if(!g){ stack[pin]=0; return 'X'; }
+    const ins=[];
+    for(let k=0;k<nIn(g);k++){ const src=byTo['g'+gid+':i'+k]; ins.push(src===undefined?1:val(src)); }
+    const r=g.type==='NOT'?notV(ins[0]):nandV(ins);
+    stack[pin]=0; memo[pin]=r; return r;
+  }
+  const out=byTo.out===undefined?null:val(byTo.out);
+  return {val,out,loop,byTo};
+}
+
+function placeGates(S){
+  const pool={not:[],p2:[],p4:[],p8:[]};
+  for(let i=0;i<6;i++) pool.not.push({mod:'n04',gi:i});
+  ['n00a','n00b'].forEach(m=>{ for(let i=0;i<4;i++) pool.p2.push({mod:m,gi:i}); });
+  ['n20a','n20b'].forEach(m=>{ for(let i=0;i<2;i++) pool.p4.push({mod:m,gi:i}); });
+  pool.p8.push({mod:'n30',gi:0});
+  const used={not:0,p2:0,p4:0,p8:0}, fail=[], assign={};
+  const cnt={not:0,n2:0,n4:0,n8:0};
+  const take=(k,g)=>{ if(pool[k].length){ assign[g.id]=pool[k].shift(); used[k]++; return true; } return false; };
+  S.gates.slice().sort((a,b)=>nIn(b)-nIn(a)||a.id-b.id).forEach(g=>{
+    if(g.type==='NOT'){ cnt.not++; if(!take('not',g)) fail.push('negací je víc než 6'); return; }
+    if(g.n>=5){ cnt.n8++; if(!take('p8',g)) fail.push('hradel s 8 vstupy je víc než 1'); }
+    else if(g.n>=3){ cnt.n4++; if(!take('p4',g)&&!take('p8',g)) fail.push('hradel se 4 vstupy se nevejde'); }
+    else { cnt.n2++; if(!take('p2',g)&&!take('p4',g)&&!take('p8',g)) fail.push('hradel se 2 vstupy se nevejde'); }
+  });
+  return {used,fail,cnt,assign};
+}
+const allocate=placeGates;
+
+/* ---- gate details panel ---- */
+const gnum=(S,id)=>S.gates.findIndex(g=>g.id===id)+1;
+function srcLabel(S,pin){
+  if(pin.startsWith('in:')) return 'x'+pin.slice(3);
+  const gid=gateOfPin(pin), g=gateById(S,gid);
+  if(g&&g.type==='NOT'){ const w=S.wires.find(x=>x.to==='g'+gid+':i0'); if(w&&w.from.startsWith('in:')) return 'x\u0304'+w.from.slice(3); }
+  return 'H'+gnum(S,gid);
+}
+const isLit=l=>/^x\u0304?\d$/.test(l);
+function describeGate(S,g){
+  const ev=evalSchema(S,bitsOf(state.cur)), n=gnum(S,g.id);
+  const byTo={}; S.wires.forEach(w=>byTo[w.to]=w.from);
+  const ins=[]; for(let k=0;k<nIn(g);k++){ const src=byTo['g'+g.id+':i'+k]; ins.push({k,src,label:src?srcLabel(S,src):'nezapojeno',val:src?ev.val(src):1}); }
+  const outv=ev.val('g'+g.id+':o');
+  const used=ins.filter(x=>x.src);
+  let expr,term='';
+  if(g.type==='NOT'){ const l=ins[0].label; expr=/^x\d$/.test(l)?('x\u0304'+l.slice(1)):('\u00AC'+l); }
+  else { const labs=used.map(x=>x.label); expr='\u00AC('+labs.join(' \u00B7 ')+')'; if(labs.length&&labs.every(isLit)) term=labs.join(' \u00B7 '); }
+  const zero=[]; for(let i=0;i<16;i++){ if(evalSchema(S,bitsOf(i)).val('g'+g.id+':o')===0) zero.push(i); }
+  const dest=S.wires.filter(w=>w.from==='g'+g.id+':o').map(w=>{ if(w.to==='out') return 'výstup F'; const m=/^g(\d+):i(\d+)$/.exec(w.to); return 'H'+gnum(S,+m[1])+', vstup '+(+m[2]+1); });
+  const pl=placeGates(S).assign[g.id];
+  const nm=g.type==='NOT'?'NOT':'NAND se '+g.n+' vstupy';
+  let h=`<div class="gi-h"><b>H${n}</b> ${nm}</div>`;
+  h+=`<div class="gi-r"><span>Na desce</span><b>${pl?esc(MOD_INFO[pl.mod].name+', hradlo '+(pl.gi+1)):'nevejde se'}</b></div>`;
+  h+=`<div class="gi-sub">Vstupy při i = ${state.cur} (${bin4(state.cur)})</div>`;
+  ins.forEach(x=>{ h+=`<div class="gi-r"><span>${x.k+1}. vstup</span><b>${esc(x.label)}${x.src?` = ${x.val}`:' (jako 1)'}</b></div>`; });
+  h+=`<div class="gi-sub">Co počítá</div>`;
+  h+=`<div class="gi-e">${esc(expr)}</div>`;
+  if(term) h+=`<div class="gi-r"><span>Člen součtu</span><b>${esc(term)}</b></div>`;
+  h+=`<div class="gi-r"><span>Výstup teď</span><b>${outv}</b></div>`;
+  h+=`<div class="gi-r"><span>Výstup je 0 při i</span><b>${zero.length?zero.join(', '):'nikdy'}</b></div>`;
+  h+=`<div class="gi-r"><span>Vede do</span><b>${dest.length?esc(dest.join('; ')):'nikam'}</b></div>`;
+  return h;
+}
+function renderGateInfo(S){
+  const el=$('#gateInfo'); if(!el) return;
+  if(ui.sel&&ui.sel.k==='gate'){ const g=gateById(S,ui.sel.id); if(g){ el.innerHTML=describeGate(S,g); return; } }
+  if(ui.sel&&ui.sel.k==='wire'){
+    const w=S.wires.find(x=>x.id===ui.sel.id);
+    if(w){ const ev=evalSchema(S,bitsOf(state.cur)); const to=w.to==='out'?'výstup F':(()=>{ const m=/^g(\d+):i(\d+)$/.exec(w.to); return 'H'+gnum(S,+m[1])+', vstup '+(+m[2]+1); })();
+      el.innerHTML=`<div class="gi-h"><b>Drát</b></div><div class="gi-r"><span>Odkud</span><b>${esc(srcLabel(S,w.from))}</b></div><div class="gi-r"><span>Kam</span><b>${esc(to)}</b></div><div class="gi-r"><span>Hodnota při i = ${state.cur}</span><b>${ev.val(w.from)}</b></div>`; return; }
+  }
+  el.innerHTML='<p class="note">Klikni na hradlo a uvidíš, co počítá, odkud berou vstupy, jaké mají teď hodnoty a kam vede výstup.</p>';
+}
+
+function sayS(t,warn){ ui.saySch=t||''; ui.sayWarn=!!warn; const e=$('#saySch'); e.textContent=ui.saySch; e.classList.toggle('warn',!!warn); }
+function sayB(t,warn){ ui.sayBrd=t||''; const e=$('#sayBrd'); e.textContent=ui.sayBrd; e.classList.toggle('warn',!!warn); }
+
+function touchSchema(){ ui.chkS=null; save(); renderAll(); }
+
+function addGate(type){
+  const S=per().sch;
+  const n=type==='NOT'?1:2;
+  const cand=[]; for(let y=60;y<=470;y+=100) for(let x=250;x<=730;x+=110) cand.push({x,y});
+  let pos=cand.find(c=>!S.gates.some(g=>Math.abs(g.x-c.x)<70&&Math.abs(g.y-c.y)<70))||{x:300,y:60};
+  const g={id:S.next++,type,n,x:pos.x,y:pos.y};
+  S.gates.push(g); ui.sel={k:'gate',id:g.id}; ui.pend=null;
+  sayS(type==='NAND'?'Přidáno hradlo NAND se 2 vstupy. Na desce jsou hradla se 2, 4 nebo 8 vstupy, počet změníš tlačítky nahoře.':'Přidána negace NOT.');
+  touchSchema(); return g;
+}
+function setGateN(id,n){
+  const S=per().sch,g=gateById(S,id); if(!g||g.type!=='NAND') return;
+  n=fitN(Math.max(2,n)); if(n===g.n) return;
+  g.n=n; S.wires=S.wires.filter(w=>{ const m=/^g(\d+):i(\d+)$/.exec(w.to); return !(m&&+m[1]===id&&+m[2]>=n); });
+  touchSchema();
+}
+function stepGateN(id,d){
+  const g=gateById(per().sch,id); if(!g||g.type!=='NAND') return;
+  const i=NSIZES.indexOf(g.n), j=Math.max(0,Math.min(NSIZES.length-1,i+d));
+  setGateN(id,NSIZES[j]);
+}
+function connect(a,b){
+  const S=per().sch;
+  let src,dst;
+  if(isOutPin(a)&&!isOutPin(b)){ src=a; dst=b; } else if(isOutPin(b)&&!isOutPin(a)){ src=b; dst=a; } else return false;
+  const gs=gateOfPin(src), gd=gateOfPin(dst);
+  if(gs!==null&&gs===gd){ sayS('Výstup hradla nejde zapojit zpátky do jeho vstupu.',true); return false; }
+  S.wires=S.wires.filter(w=>w.to!==dst);
+  S.wires.push({id:S.next++,from:src,to:dst});
+  return true;
+}
+function pinClick(pin){
+  if(!ui.pend){ ui.pend=pin; ui.sel=null; sayS(isOutPin(pin)?'Teď klikni na vstup, kam má signál vést.':'Teď klikni na výstup, odkud má signál přijít.'); renderSchema(); return; }
+  if(ui.pend===pin){ ui.pend=null; sayS(''); renderSchema(); return; }
+  if(isOutPin(ui.pend)===isOutPin(pin)){ ui.pend=pin; sayS(isOutPin(pin)?'Teď klikni na vstup.':'Teď klikni na výstup.'); renderSchema(); return; }
+  const a=ui.pend; ui.pend=null;
+  if(connect(a,pin)){ sayS(''); touchSchema(); } else renderSchema();
+}
+function deleteSel(){
+  const S=per().sch;
+  if(!ui.sel) return;
+  if(ui.sel.k==='gate'){
+    const id=ui.sel.id;
+    S.gates=S.gates.filter(g=>g.id!==id);
+    S.wires=S.wires.filter(w=>gateOfPin(w.from)!==id&&gateOfPin(w.to)!==id);
+  } else S.wires=S.wires.filter(w=>w.id!==ui.sel.id);
+  ui.sel=null; touchSchema();
+}
+function runCheckS(){
+  if(!isFilled()){ sayS('Nejdřív zadej funkci nahoře (čísla do závorek, nebo klikáním na tabulku).',true); return; }
+  const S=per().sch,t=targetOf(),res=[];
+  for(let i=0;i<16;i++){
+    const ev=evalSchema(S,bitsOf(i));
+    const got=ev.out; res.push({got,ok:t[i]==='X'||got===t[i]});
+  }
+  ui.chkS={res}; renderAll();
+}
+function msgListS(){
+  const S=per().sch,m=[];
+  let freeBad=0,freeOk=0;
+  S.gates.forEach(g=>{ for(let k=0;k<nIn(g);k++) if(!S.wires.some(w=>w.to==='g'+g.id+':i'+k)){ if(g.type==='NAND'&&g.n>2) freeOk++; else freeBad++; } });
+  const ev=evalSchema(S,bitsOf(state.cur));
+  if(!S.gates.length&&!S.wires.length) return [{t:'info',s:'Zatím je schéma prázdné.'}];
+  if(ev.out===null) m.push({t:'bad',s:'Výstup F není nikam zapojený.'});
+  if(ev.loop) m.push({t:'bad',s:'V obvodu je smyčka: výstup se vrací na vlastní vstup.'});
+  if(freeBad) m.push({t:'warn',s:`Nezapojených vstupů u hradel NOT a NAND se 2 vstupy: ${freeBad}. Tam už nezapojený vstup nedává smysl.`});
+  if(freeOk) m.push({t:'info',s:`Nezapojených vstupů u hradel se 4 a 8 vstupy: ${freeOk}. Chovají se jako 1, na desce je prostě necháš prázdné.`});
+  if(ui.chkS){
+    const t=targetOf(), bad=[];
+    ui.chkS.res.forEach((r,i)=>{ if(!r.ok) bad.push(i); });
+    if(!bad.length) m.push({t:'ok',s:`Schéma odpovídá funkci ve všech kombinacích. Hodnoty X se nekontrolují.`});
+    else{
+      m.push({t:'bad',s:`Nesedí ${bad.length} z 16 kombinací.`});
+      bad.slice(0,4).forEach(i=>{ const g=ui.chkS.res[i].got; m.push({t:'info',s:`i = ${i} (${bin4(i)}): obvod dává ${g===null?'nic':g}, má být ${t[i]}.`}); });
+      if(bad.length>4) m.push({t:'info',s:`… a další (${bad.length-4}).`});
+    }
+  } else if(S.gates.length||S.wires.length) m.push({t:'info',s:'Kontrola ještě neproběhla.'});
+  return m;
+}
+function renderMsgs(el,list){
+  el.innerHTML=list.map(x=>`<li class="${x.t}"><span class="mk">${x.t==='ok'?'✓':x.t==='bad'?'✗':x.t==='warn'?'!':'i'}</span><span>${esc(x.s)}</span></li>`).join('');
+}
+function renderUse(){
+  const S=per().sch,a=allocate(S);
+  const line=(name,u,max,over)=>`<div class="r${over?' over':''}"><span>${name}</span><b>${u} z ${max}</b></div>`;
+  const c=a.cnt;
+  let h=line('NOT (7404)',a.used.not,6,c.not>6);
+  h+=line('NAND se 2 vstupy (7400)',a.used.p2,8,false);
+  h+=line('NAND se 4 vstupy (7420)',a.used.p4,4,false);
+  h+=line('NAND s 8 vstupy (7430)',a.used.p8,1,false);
+  const tot=S.gates.length;
+  h+=`<div class="r tot"><span>Hradel celkem</span><b>${tot}</b></div>`;
+  if(a.fail.length) h+=`<div class="r over"><span>Na desku se nevejde: ${esc(a.fail.join('; '))}.</span></div>`;
+  $('#useS').innerHTML=h;
+}
+
+function renderSchema(light){
+  const S=per().sch,svg=$('#sch');
+  const vars=bitsOf(state.cur), ev=evalSchema(S,vars), live=state.liveS;
+  const t=targetOf();
+  const vcol=v=>v===0?'var(--v0)':v===1?'var(--v1)':'var(--vx)';
+  let h='';
+  /* wires */
+  S.wires.forEach(w=>{
+    const p=pinPos(S,w.from),q=pinPos(S,w.to); if(!p||!q) return;
+    const dx=Math.max(30,Math.abs(q.x-p.x)*0.5);
+    const d=`M${p.x},${p.y} C${p.x+dx},${p.y} ${q.x-dx},${q.y} ${q.x},${q.y}`;
+    const sel=ui.sel&&ui.sel.k==='wire'&&ui.sel.id===w.id;
+    let st='';
+    if(live){ const v=ev.val(w.from); st=` style="stroke:${vcol(v)}${v==='X'?';stroke-dasharray:5 4':''}"`; }
+    h+=`<path class="wire${sel?' sel':''}" d="${d}"${st}/><path class="whit" d="${d}" data-a="wire:${w.id}"><title>Drát. Klikni pro výběr.</title></path>`;
+  });
+  /* inputs */
+  [3,2,1,0].forEach(k=>{
+    const y=YIN[k],v=vars[k];
+    h+=`<g class="sw" data-a="sw:${k}" role="button" tabindex="0" aria-label="Vstup x${k}, hodnota ${v}, přepnout"><rect class="swbody" x="12" y="${y-17}" width="70" height="34" rx="17"/><text class="tag" x="28" y="${y+5}">x${k}</text><circle cx="62" cy="${y}" r="11" fill="${vcol(v)}"/><text class="vb" x="62" y="${y+4}">${v}</text></g>`;
+    h+=`<line class="gline" x1="82" y1="${y}" x2="96" y2="${y}"/>`;
+  });
+  /* output */
+  {
+    const ov=ev.out;
+    h+=`<rect class="outbox" x="880" y="212" width="92" height="56" rx="10"/><line class="gline" x1="872" y1="240" x2="880" y2="240"/>`;
+    h+=`<text class="tag" x="896" y="246" style="font-weight:600">F</text>`;
+    if(ov===null) h+=`<circle cx="944" cy="240" r="13" fill="none" stroke="var(--line-strong)" stroke-dasharray="3 3"/><text class="tagm" x="944" y="244" text-anchor="middle">–</text>`;
+    else h+=`<circle cx="944" cy="240" r="13" fill="${vcol(ov)}"/><text class="vb" x="944" y="244">${ov}</text>`;
+    h+=`<text class="tagm" x="926" y="288" text-anchor="middle">${isFilled()?'má být '+t[state.cur]:'funkce není zadaná'}</text>`;
+  }
+  /* gates */
+  S.gates.forEach(g=>{
+    const w=gW(g),H=gH(g),sel=ui.sel&&ui.sel.k==='gate'&&ui.sel.id===g.id;
+    h+=`<g>`;
+    h+=`<rect class="gbody${sel?' sel':''}" x="${g.x}" y="${g.y}" width="${w}" height="${H}" rx="3" data-a="gate:${g.id}"/>`;
+    h+=`<text class="glab" x="${g.x+w/2}" y="${g.y+H/2+5}">${g.type==='NOT'?'1':'&amp;'}</text>`;
+    h+=`<text class="hnum" x="${g.x}" y="${g.y-6}">H${S.gates.indexOf(g)+1}</text>`;
+    const o=outPos(g);
+    h+=`<circle class="bubble" cx="${g.x+w+5}" cy="${o.y}" r="5"/><line class="gline" x1="${g.x+w+10}" y1="${o.y}" x2="${o.x}" y2="${o.y}"/>`;
+    for(let k=0;k<nIn(g);k++){ const p=inPos(g,k); h+=`<line class="gline" x1="${p.x}" y1="${p.y}" x2="${g.x}" y2="${p.y}"/>`; }
+    h+=`</g>`;
+    if(live){ const v=ev.val('g'+g.id+':o'); h+=`<text class="vtxt" x="${o.x+10}" y="${o.y-8}" fill="${vcol(v)}">${v}</text>`; }
+  });
+  /* pins (top) */
+  const pin=(id,p,extra)=>`<circle class="pin${ui.pend===id?' pend':''}${extra||''}" cx="${p.x}" cy="${p.y}" r="5"/><circle class="phit" cx="${p.x}" cy="${p.y}" r="11" data-a="pin:${id}"><title>${isOutPin(id)?'Výstup':'Vstup'}</title></circle>`;
+  [0,1,2,3].forEach(k=>{ h+=pin('in:'+k,pinPos(S,'in:'+k)); });
+  h+=pin('out',OUTP,S.wires.some(w=>w.to==='out')?'':' free');
+  S.gates.forEach(g=>{
+    h+=pin('g'+g.id+':o',outPos(g));
+    for(let k=0;k<nIn(g);k++){ const id='g'+g.id+':i'+k; h+=pin(id,inPos(g,k),S.wires.some(w=>w.to===id)?'':(g.type==='NAND'&&g.n>2?' spare':' free')); }
+  });
+  svg.innerHTML=h;
+  if(light) return;
+  if(!S.gates.length&&!ui.saySch) $('#saySch').textContent='Přidej hradlo tlačítkem NAND nebo NOT a spoj ho se vstupy kliknutím na body.';
+  else if(!ui.saySch) $('#saySch').textContent='';
+  /* controls for the selected gate */
+  const ctl=$('#selCtl'); let c='';
+  if(ui.sel&&ui.sel.k==='gate'){
+    const g=gateById(S,ui.sel.id);
+    if(g){
+      if(g.type==='NAND') c+=`<span class="row" style="gap:6px">Vstupů <button class="btn sq" data-nd="-1" aria-label="Méně vstupů" ${g.n<=2?'disabled':''}>−</button><output>${g.n}</output><button class="btn sq" data-nd="1" aria-label="Více vstupů" ${g.n>=8?'disabled':''}>+</button></span>`;
+      c+=`<button class="btn" id="delSel">Smazat hradlo</button>`;
+    }
+  } else if(ui.sel&&ui.sel.k==='wire') c+=`<button class="btn" id="delSel">Smazat drát</button>`;
+  ctl.innerHTML=c;
+  $('#liveS').setAttribute('aria-pressed',String(state.liveS));
+  renderGateInfo(S); renderUse(); renderMsgs($('#msgS'),msgListS());
+}
+
+/* ===================== BOARD ===================== */
+function sw8(B){ return bitsOf(state.cur).concat(B.hi); }
+function analyze(B,bitsA){
+  const par={};
+  const find=a=>{ if(par[a]===undefined) par[a]=a; while(par[a]!==a){ par[a]=par[par[a]]; a=par[a]; } return a; };
+  const uni=(a,b)=>{ a=find(a); b=find(b); if(a!==b) par[a]=b; };
+  B.wires.forEach(w=>uni(nodeOf(w.a),nodeOf(w.b)));
+  const rS=find('S+'), rG=find('S-'), short=rS===rG;
+  const placed=B.slots.filter(Boolean), powered={};
+  placed.forEach(id=>{ powered[id]=!short&&find(id+'.vcc')===rS&&find(id+'.gnd')===rG; });
+  const drivers={}, addD=(node,d)=>{ const r=find(node); (drivers[r]=drivers[r]||[]).push(d); };
+  addD('S+',{t:'c',v:1,desc:'zdroj +5V'}); addD('S-',{t:'c',v:0,desc:'zdroj GND'});
+  const gates=[];
+  placed.forEach(id=>{
+    if(!powered[id]) return;
+    const k=MOD_INFO[id].kind;
+    if(k==='sel'){ for(let r=0;r<8;r++) addD('sel.A'+r,{t:'c',v:bitsA[r],desc:'selektor A'+r}); }
+    else if(k!=='probe'){
+      gateGeo(k).forEach((g,gi)=>{
+        const o=id+'.g'+gi+'.o', ins=g.ins.map((_,ii)=>id+'.g'+gi+'.i'+ii);
+        gates.push({id,gi,k,ins,out:o});
+        addD(o,{t:'g',ref:gates.length-1,desc:MOD_INFO[id].name+', hradlo '+(gi+1)});
+      });
+    }
+  });
+  const outV=gates.map(()=> 'X');
+  const rootVal=r=>{ const d=drivers[r]; if(!d||!d.length) return 'Z'; if(d.length>1) return 'X'; return d[0].t==='c'?d[0].v:outV[d[0].ref]; };
+  let changed=true,it=0;
+  while(changed&&it<60){
+    changed=false; it++;
+    gates.forEach((g,i)=>{
+      const ins=g.ins.map(n=>{ const v=rootVal(find(n)); return v==='Z'?1:v; });
+      const v=g.k==='7404'?notV(ins[0]):nandV(ins);
+      if(v!==outV[i]){ outV[i]=v; changed=true; }
+    });
+  }
+  const conflicts=Object.keys(drivers).filter(r=>drivers[r].length>1).map(r=>({root:r,drivers:drivers[r]}));
+  return {find,rootVal,powered,short,rS,rG,conflicts,drivers,osc:changed,valOf:n=>rootVal(find(n))};
+}
+function probeVal(an,B,p){ if(!an.powered.probe) return null; if(!B.slots.includes('probe')) return null; const v=an.valOf('probe.A'+p); return v==='Z'?null:v; }
+
+function runCheckB(){
+  if(!isFilled()){ sayB('Nejdřív zadej funkci nahoře (čísla do závorek, nebo klikáním na tabulku).',true); return; }
+  const B=per().brd,t=targetOf(),res=[];
+  for(let i=0;i<16;i++){
+    const an=analyze(B,bitsOf(i).concat(B.hi));
+    const got=probeVal(an,B,B.probeOut); res.push({got,ok:t[i]==='X'||got===t[i]});
+  }
+  ui.chkB={res}; renderAll();
+}
+function touchBoard(){ ui.chkB=null; save(); renderAll(); }
+function usedHole(B,id){ return B.wires.find(w=>w.a===id||w.b===id); }
+function holeClick(id){
+  const B=per().brd, used=usedHole(B,id);
+  if(!ui.bPend){
+    if(used){ ui.bSel={k:'wire',id:used.id}; ui.bMod=null; sayB('Vybraný drát smažeš tlačítkem Smazat drát nebo klávesou Delete.'); renderBoard(); return; }
+    ui.bPend=id; ui.bSel=null; ui.bMod=null; sayB('Teď klikni na druhou zásuvku, kam drát vede.'); renderBoard(); return;
+  }
+  if(ui.bPend===id){ ui.bPend=null; sayB(''); renderBoard(); return; }
+  if(used){ sayB('Tahle zásuvka je obsazená. Použij druhou díru ve dvojici, nebo jiné místo.',true); return; }
+  if(nodeOf(id)===nodeOf(ui.bPend)){ sayB('Obě zásuvky jsou spojené uvnitř, drát by nic nepropojil.',true); return; }
+  B.wires.push({id:B.next++,a:ui.bPend,b:id}); ui.bPend=null; sayB(''); touchBoard();
+}
+function freeHole(B,ids){ const u=new Set(); B.wires.forEach(w=>{ u.add(w.a); u.add(w.b); }); return ids.find(i=>!u.has(i)); }
+function autoPower(){
+  const B=per().brd; let n=0;
+  const add=(a,b)=>{ if(a&&b){ B.wires.push({id:B.next++,a,b}); n++; } };
+  const has=node=>B.wires.some(w=>nodeOf(w.a)===node||nodeOf(w.b)===node);
+  const vs=[],gs=[]; for(let s=0;s<8;s++){ vs.push('B'+s+'.v#0','B'+s+'.v#1'); gs.push('B'+s+'.g#0','B'+s+'.g#1'); }
+  const inUse=id=>id==='sel'||id==='probe'||B.wires.some(w=>[w.a,w.b].some(h=>HOLES[h]&&HOLES[h].mod===id&&!/\.(vcc|gnd)#/.test(h)));
+  B.slots.forEach((id,s)=>{
+    if(!id||!inUse(id)) return;
+    if(!has(id+'.vcc')) add(id+'.vcc#0',freeHole(B,['B'+s+'.v#0','B'+s+'.v#1'].concat(vs)));
+    if(!has(id+'.gnd')) add(id+'.gnd#0',freeHole(B,['B'+s+'.g#0','B'+s+'.g#1'].concat(gs)));
+  });
+  if(!has('S+')) add('S+#0',freeHole(B,vs));
+  if(!has('S-')) add('S-#0',freeHole(B,gs));
+  sayB(n?`Přidáno ${n} drátů napájení (jen pro selektor, probe a moduly s dráty). Až zapojíš další modul, stiskni tlačítko znovu.`:'Napájení je už zapojené.');
+  touchBoard();
+}
+function pullModule(id){
+  const B=per().brd,s=B.slots.indexOf(id); if(s<0) return;
+  B.slots[s]=null;
+  B.wires=B.wires.filter(w=>{ const ha=HOLES[w.a],hb=HOLES[w.b]; return !((ha&&ha.mod===id)||(hb&&hb.mod===id)); });
+  ui.bMod=null; sayB(MOD_INFO[id].name+' je vyndaný, dráty z něj zmizely.'); touchBoard();
+}
+function modBarClick(id){
+  if(ui.bMod===null){ ui.bMod=id; ui.bSel=null; ui.bPend=null; sayB('Modul vybrán. Klikni na jiné místo na desce, kam ho přesunout, nebo na jiný modul pro prohození.'); renderBoard(); return; }
+  if(ui.bMod===id){ ui.bMod=null; sayB(''); renderBoard(); return; }
+  swapMods(ui.bMod,id);
+}
+function swapMods(a,b){
+  const B=per().brd,sa=B.slots.indexOf(a),sb=B.slots.indexOf(b);
+  if(sa>=0&&sb>=0){ B.slots[sa]=b; B.slots[sb]=a; ui.bMod=null; sayB(''); touchBoard(); }
+  else if(sa<0&&sb>=0){ sayB('Tenhle modul leží mimo desku. Nejdřív vyndej modul, který chceš nahradit.',true); }
+}
+function slotClick(s){
+  const B=per().brd; if(ui.bMod===null) return;
+  if(B.slots[s]){ swapMods(ui.bMod,B.slots[s]); return; }
+  const from=B.slots.indexOf(ui.bMod);
+  if(from>=0) B.slots[from]=null;
+  B.slots[s]=ui.bMod; ui.bMod=null; sayB(''); touchBoard();
+}
+function toggleSel(r){
+  const B=per().brd;
+  if(r<4) state.cur^=(1<<r); else B.hi[r-4]^=1;
+  ui.chkB=null; ui.chkS=null; save(); renderAll();
+}
+
+/* -------- board drawing -------- */
+const WPAL=['#2E63D8','#D9731A','#8A44C9','#0F9AA8','#C23A82','#7A5A2E'];
+const kindOfNode=n=>(n==='S+'||n==='B+'||/\.vcc$/.test(n))?'P':((n==='S-'||n==='B-'||/\.gnd$/.test(n))?'G':'sig');
+function wireStyle(w,an){
+  const na=nodeOf(w.a),nb=nodeOf(w.b),ka=kindOfNode(na),kb=kindOfNode(nb);
+  const hasP=ka==='P'||kb==='P',hasG=ka==='G'||kb==='G';
+  if(hasP&&hasG) return {body:'#E08A00',cap:'#E08A00',w:4,dash:true};
+  if(hasP){ const src=na==='S+'||nb==='S+'; return {body:src?'#D12B2B':'#8B9099',cap:'#D12B2B',w:src?5:4}; }
+  if(hasG){ const src=na==='S-'||nb==='S-'; return {body:src?'#1F8A3F':'#8B9099',cap:'#1F8A3F',w:src?5:4}; }
+  if(state.liveB){
+    const v=an.valOf(na);
+    const c=v===0?'#1C8A4A':v===1?'#D0382A':v==='X'?'#C17400':'#8B9099';
+    return {body:c,cap:c,w:4,dash:v==='X'};
+  }
+  if(/^probe\./.test(na)||/^probe\./.test(nb)) return {body:'#D12B2B',cap:'#D12B2B',w:4};
+  const c=WPAL[w.id%WPAL.length]; return {body:c,cap:c,w:4};
+}
+function wirePath(p,q){ const dx=Math.abs(q.x-p.x),sag=34+Math.min(150,dx*0.10+Math.abs(q.y-p.y)*0.15); return `M${p.x},${p.y} C${p.x},${p.y+sag} ${q.x},${q.y+sag} ${q.x},${q.y}`; }
+
+function ledFill(v,on){ if(!on||v===null||v==='Z') return '#4A4F58'; return v===0?'#1C9B4F':v===1?'#D13B2A':'#C98A00'; }
+function drawModuleBody(id,s,an,B){
+  const mx=modX(s),my=MODY,k=MOD_INFO[id].kind,pw=an.powered[id];
+  let h=`<g transform="translate(${mx},${my})">`;
+  h+=`<rect x="0" y="0" width="${MODW}" height="${MODH}" rx="7" fill="#EEF0E8" stroke="#B4B5A6" stroke-width="1.5"/>`;
+  h+=`<text x="34" y="32" font-size="10" font-family="IBM Plex Sans,sans-serif" fill="#2447B8">+5V</text><text x="112" y="32" font-size="10" text-anchor="end" font-family="IBM Plex Sans,sans-serif" fill="#2447B8">GND</text>`;
+  const ink='#2447B8';
+  if(k==='sel'||k==='probe'){
+    h+=`<text x="12" y="52" font-size="10" fill="${ink}" font-family="IBM Plex Sans,sans-serif" font-weight="600">LOW</text><text x="12" y="180" font-size="10" fill="${ink}" font-family="IBM Plex Sans,sans-serif" font-weight="600">HIGH</text>`;
+    h+=`<text x="${MODW-12}" y="52" font-size="10" text-anchor="end" fill="${ink}" font-family="IBM Plex Mono,monospace">0/1</text>`;
+    for(let r=0;r<8;r++){
+      const y=ROWY[r];
+      if(k==='sel'){
+        h+=`<text x="76" y="${y+4}" font-size="11" fill="${ink}" font-family="IBM Plex Mono,monospace" font-weight="500">A${r}</text>`;
+        const v=sw8(B)[r];
+        h+=`<circle cx="56" cy="${y}" r="7" fill="${ledFill(v,pw)}"/>`;
+        if(pw) h+=`<text x="56" y="${y+3.5}" font-size="9" text-anchor="middle" fill="#fff" font-family="IBM Plex Mono,monospace" font-weight="600">${v}</text>`;
+      } else {
+        h+=`<text x="48" y="${y+4}" font-size="11" fill="${ink}" font-family="IBM Plex Mono,monospace" font-weight="500">A${r}</text>`;
+        const v=pw?an.valOf('probe.A'+r):null;
+        h+=`<circle cx="80" cy="${y}" r="7" fill="${ledFill(v,pw)}"/>`;
+        if(pw&&v!==null&&v!=='Z') h+=`<text x="80" y="${y+3.5}" font-size="9" text-anchor="middle" fill="#fff" font-family="IBM Plex Mono,monospace" font-weight="600">${v==='X'?'?':v}</text>`;
+      }
+    }
+    if(k==='probe'){
+      [[0,'LOW'],[4,'HIGH']].forEach(([r0,nm])=>{
+        const y0=r0===0?58:186;
+        let dig='–';
+        if(pw){ const vs=[0,1,2,3].map(j=>an.valOf('probe.A'+(r0+j))); if(vs.every(v=>v===0||v===1)) dig=(vs[0]+2*vs[1]+4*vs[2]+8*vs[3]).toString(16).toUpperCase(); }
+        h+=`<rect x="100" y="${y0}" width="34" height="${r0===0?106:106}" rx="4" fill="#2A1618" stroke="#7A2B2B"/>`;
+        h+=`<text x="117" y="${y0+62}" font-size="26" text-anchor="middle" fill="${pw?'#FF5A4A':'#5A3A3A'}" font-family="IBM Plex Mono,monospace" font-weight="600">${dig}</text>`;
+      });
+    }
+  } else {
+    gateGeo(k).forEach((g,gi)=>{
+      g.ins.forEach(y=>{ h+=`<line x1="32" y1="${y}" x2="50" y2="${y}" stroke="${ink}" stroke-width="1.4"/>`; });
+      h+=`<rect x="50" y="${g.box[0]}" width="46" height="${g.box[1]-g.box[0]}" rx="2" fill="none" stroke="${ink}" stroke-width="1.5"/>`;
+      h+=`<text x="73" y="${(g.box[0]+g.box[1])/2+5}" font-size="14" text-anchor="middle" fill="${ink}" font-family="IBM Plex Mono,monospace" font-weight="600">${g.lab}</text>`;
+      h+=`<text x="92" y="${g.box[0]+9}" font-size="8" text-anchor="end" fill="${ink}" font-family="IBM Plex Sans,sans-serif">${gi+1}</text>`;
+      h+=`<circle cx="100" cy="${g.out}" r="4" fill="#EEF0E8" stroke="${ink}" stroke-width="1.4"/><line x1="104" y1="${g.out}" x2="114" y2="${g.out}" stroke="${ink}" stroke-width="1.4"/>`;
+    });
+  }
+  h+=`</g>`;
+  return h;
+}
+function drawControls(id,s,an,B){
+  const mx=modX(s),my=MODY,k=MOD_INFO[id].kind,selm=ui.bMod===id;
+  let h=`<g transform="translate(${mx},${my})">`;
+  h+=`<g class="mbar" data-a="modsel:${id}"><title>Chyť modul za popisek a klikni na jiné místo, kam ho přesunout.</title><rect x="4" y="${MODH-34}" width="${MODW-8}" height="28" rx="5" fill="${selm?'#C7D6FA':'#E0E2D5'}" stroke="${selm?'#2250C8':'#B4B5A6'}" stroke-width="${selm?2.5:1}"/>`;
+  h+=`<text x="14" y="${MODH-15}" font-size="13" fill="#2447B8" font-family="IBM Plex Sans,sans-serif" font-weight="600" style="pointer-events:none">${MOD_INFO[id].label}</text>`;
+  if(MOD_INFO[id].tag) h+=`<text x="${MODW-14}" y="${MODH-15}" font-size="11" text-anchor="end" fill="#6B6E80" font-family="IBM Plex Sans,sans-serif" style="pointer-events:none">${MOD_INFO[id].tag}</text>`;
+  h+=`</g>`;
+  if(k==='sel'){
+    for(let r=0;r<8;r++){
+      const y=ROWY[r];
+      h+=`<g class="mbar" data-a="btn:${r}" role="button" aria-label="Přepnout A${r}"><circle cx="24" cy="${y}" r="10" fill="#FAFAF5" stroke="#8A8C7C" stroke-width="2"/><circle cx="24" cy="${y}" r="5" fill="#D7D9CC"/></g>`;
+    }
+  }
+  h+=`</g>`;
+  return h;
+}
+function renderBoard(){
+  const B=per().brd,svg=$('#brd');
+  if(state.zoom===null){ const w=$('#boardWrap').clientWidth||1100; state.zoom=Math.max(0.7,Math.min(1.15,(w-4)/BW)); }
+  const z=state.zoom;
+  svg.setAttribute('viewBox',`0 0 ${BW} ${BH}`); svg.setAttribute('width',Math.round(BW*z)); svg.setAttribute('height',Math.round(BH*z));
+  $('#zoomVal').textContent=Math.round(z*100)+' %';
+  const an=analyze(B,sw8(B));
+  let h='';
+  h+=`<rect x="0" y="0" width="${BW}" height="${BH}" rx="12" fill="#E3E1D3"/>`;
+  h+=`<rect x="${X0-8}" y="58" width="${BW-X0-2}" height="70" rx="6" fill="#D5D3C3" stroke="#B4B1A0"/>`;
+  /* source */
+  h+=`<rect x="10" y="38" width="118" height="100" rx="8" fill="#2E3440"/><text x="69" y="58" font-size="11" text-anchor="middle" fill="#E6EBF1" font-family="IBM Plex Sans,sans-serif" font-weight="600">ZDROJ 5 V</text>`;
+  h+=`<text x="36" y="84" font-size="10" text-anchor="middle" fill="#FF8A80" font-family="IBM Plex Sans,sans-serif">+5V</text><text x="92" y="84" font-size="10" text-anchor="middle" fill="#8FD6A4" font-family="IBM Plex Sans,sans-serif">GND</text>`;
+  h+=`<text x="69" y="124" font-size="9.5" text-anchor="middle" fill="#9AA3B2" font-family="IBM Plex Sans,sans-serif">zapoj na desku</text>`;
+  /* strip labels */
+  for(let s=0;s<8;s++){
+    const sx=X0+s*SLOT;
+    h+=`<text x="${sx+20}" y="80" font-size="9.5" text-anchor="middle" fill="#2A6B3C" font-family="IBM Plex Sans,sans-serif" font-weight="600">GND</text>`;
+    h+=`<text x="${sx+64}" y="80" font-size="9.5" text-anchor="middle" fill="#A82727" font-family="IBM Plex Sans,sans-serif" font-weight="600">+5V</text>`;
+    h+=`<text x="${sx+121}" y="80" font-size="9.5" text-anchor="middle" fill="#6B6E80" font-family="IBM Plex Sans,sans-serif">rozdvojka</text>`;
+    h+=`<line x1="${sx+43}" y1="70" x2="${sx+43}" y2="118" stroke="#B4B1A0"/><line x1="${sx+86}" y1="70" x2="${sx+86}" y2="118" stroke="#B4B1A0"/>`;
+  }
+  /* slots */
+  for(let s=0;s<8;s++){
+    const x=X0+s*SLOT+(SLOT-MODW)/2;
+    if(!B.slots[s]){
+      h+=`<rect x="${x}" y="${MODY}" width="${MODW}" height="${MODH}" rx="7" fill="none" stroke="#A9A693" stroke-dasharray="6 5" stroke-width="1.5" ${ui.bMod?'data-a="slot:'+s+'" style="cursor:pointer;pointer-events:all"':''}/>`;
+      h+=`<text x="${x+MODW/2}" y="${MODY+MODH/2}" font-size="12" text-anchor="middle" fill="#7A7765" font-family="IBM Plex Sans,sans-serif">volné místo</text>`;
+    } else if(ui.bMod&&ui.bMod!==B.slots[s]){
+      h+=`<rect x="${x-3}" y="${MODY-3}" width="${MODW+6}" height="${MODH+6}" rx="9" fill="none" stroke="#2250C8" stroke-dasharray="5 4" stroke-width="1.5" data-a="slot:${s}" style="cursor:pointer;pointer-events:all"/>`;
+    }
+  }
+  /* modules */
+  B.slots.forEach((id,s)=>{ if(id) h+=drawModuleBody(id,s,an,B); });
+  /* hole visuals */
+  const ids=['S+#0','S-#0'];
+  for(let s=0;s<8;s++){ BOFF.g.forEach((_,i)=>ids.push('B'+s+'.g#'+i)); BOFF.v.forEach((_,i)=>ids.push('B'+s+'.v#'+i)); BOFF.j.forEach((_,i)=>ids.push('B'+s+'.j#'+i)); }
+  Object.keys(HOLES).forEach(id=>{ if(B.slots.includes(HOLES[id].mod)) ids.push(id); });
+  const hole=(id)=>{ const p=posOf(id,B); if(!p) return ''; const pend=ui.bPend===id; return `<circle cx="${p.x}" cy="${p.y}" r="5.2" fill="#23262E" stroke="${pend?'#2250C8':'#B8A25E'}" stroke-width="${pend?3:1.8}"/>`; };
+  ids.forEach(id=>{ h+=hole(id); });
+  /* wires */
+  B.wires.forEach(w=>{
+    const p=posOf(w.a,B),q=posOf(w.b,B); if(!p||!q) return;
+    const d=wirePath(p,q),st=wireStyle(w,an),sel=ui.bSel&&ui.bSel.id===w.id;
+    if(sel) h+=`<path d="${d}" fill="none" stroke="#2250C8" stroke-width="${st.w+7}" stroke-linecap="round" opacity=".45"/>`;
+    h+=`<path d="${d}" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="${st.w+2}" stroke-linecap="round"/>`;
+    h+=`<path d="${d}" fill="none" stroke="${st.body}" stroke-width="${st.w}" stroke-linecap="round"${st.dash?' stroke-dasharray="7 5"':''}/>`;
+    h+=`<circle cx="${p.x}" cy="${p.y}" r="4.2" fill="${st.cap}" stroke="rgba(0,0,0,.5)"/><circle cx="${q.x}" cy="${q.y}" r="4.2" fill="${st.cap}" stroke="rgba(0,0,0,.5)"/>`;
+    h+=`<path d="${d}" fill="none" stroke="transparent" stroke-width="12" data-a="wire:${w.id}" style="cursor:pointer;pointer-events:stroke"><title>Drát. Klikni pro výběr.</title></path>`;
+  });
+  /* controls and hit areas */
+  B.slots.forEach((id,s)=>{ if(id) h+=drawControls(id,s,an,B); });
+  ids.forEach(id=>{ const p=posOf(id,B); if(p) h+=`<circle class="hhit" cx="${p.x}" cy="${p.y}" r="8.5" data-a="hole:${id}"/>`; });
+  h+=`<text x="${BW-24}" y="${BH-14}" font-size="16" text-anchor="end" fill="#2447B8" font-family="IBM Plex Sans,sans-serif" font-weight="600">MODULE BOARD</text>`;
+  svg.innerHTML=h;
+  /* tray, toolbar, messages */
+  const out=MOD_IDS.filter(id=>!B.slots.includes(id));
+  $('#tray').innerHTML=out.length?('Vyndané moduly: '+out.map(id=>`<button class="chip" data-tray="${id}" aria-pressed="${ui.bMod===id}">${MOD_INFO[id].name}</button>`).join(' ')+(ui.bMod&&out.includes(ui.bMod)?' Klikni na volné místo na desce.':'')):'';
+  $('#delWire').disabled=!(ui.bSel&&ui.bSel.k==='wire');
+  $('#pullMod').disabled=!(ui.bMod&&B.slots.includes(ui.bMod));
+  $('#liveB').setAttribute('aria-pressed',String(state.liveB));
+  const ps=$('#probeSel'); if(!ps.options.length) ps.innerHTML=[0,1,2,3,4,5,6,7].map(r=>`<option value="${r}">A${r}</option>`).join('');
+  ps.value=String(B.probeOut);
+  renderMsgs($('#msgB'),diagBoard(B,an));
+}
+
+function diagBoard(B,an){
+  const m=[];
+  if(!B.wires.length&&!ui.chkB){
+    m.push({t:'info',s:'Začni napájením: zdroj → deska → každý modul (+5V a GND). Tlačítko Zapojit napájení to udělá za tebe.'});
+    m.push({t:'info',s:'Pak vyveď vstupy ze selektoru, spoj hradla a výstup posledního hradla dlouhým drátem zapoj do probe.'});
+    return m;
+  }
+  const nm=id=>MOD_INFO[id].name;
+  if(an.short) m.push({t:'bad',s:'Zkrat: +5V a GND jsou propojené drátem. Hledej drát, který vede z +5V na GND.'});
+  else {
+    const sRail=an.find('S+')===an.find('B+'), gRail=an.find('S-')===an.find('B-');
+    if(!sRail) m.push({t:'bad',s:'Zdroj +5V není spojený s deskou. Veď červený drát od zdroje do zásuvky +5V na desce.'});
+    if(!gRail) m.push({t:'bad',s:'Zdroj GND není spojený s deskou. Veď zelený drát od zdroje do zásuvky GND na desce.'});
+    ['sel','probe'].forEach(id=>{
+      if(!B.slots.includes(id)) { m.push({t:'bad',s:nm(id)+' není na desce.'}); return; }
+      if(!an.powered[id]) m.push({t:'bad',s:`${nm(id)} nemá napájení: ${powReason(an,id)}.`});
+    });
+    B.slots.forEach(id=>{
+      if(!id||id==='sel'||id==='probe') return;
+      const used=Object.keys(HOLES).some(h=>HOLES[h].mod===id&&!/\.(vcc|gnd)#/.test(h)&&usedHole(B,h));
+      if(used&&!an.powered[id]) m.push({t:'bad',s:`Modul ${nm(id)} má zapojené dráty, ale nemá napájení: ${powReason(an,id)}.`});
+    });
+  }
+  an.conflicts.forEach(c=>{
+    const names=c.drivers.map(d=>d.desc).join(' a ');
+    m.push({t:'bad',s:`Na jedno místo vedou dva výstupy najednou (${names}). Takhle by se obvod mohl poškodit.`});
+  });
+  const p=B.probeOut;
+  if(!usedHole(B,'probe.A'+p+'#0')&&!usedHole(B,'probe.A'+p+'#1')) m.push({t:'warn',s:`Do vstupu A${p} na probe nic nevede. Dlouhým drátem ho spoj s výstupem posledního hradla.`});
+  if(ui.chkB){
+    const t=targetOf(),bad=[];
+    ui.chkB.res.forEach((r,i)=>{ if(!r.ok) bad.push(i); });
+    if(!bad.length) m.push({t:'ok',s:'Zapojení odpovídá funkci ve všech kombinacích. Hodnoty X se nekontrolují.'});
+    else{
+      m.push({t:'bad',s:`Nesedí ${bad.length} z 16 kombinací.`});
+      bad.slice(0,4).forEach(i=>{ const g=ui.chkB.res[i].got; m.push({t:'info',s:`i = ${i} (${bin4(i)}): probe ukazuje ${g===null?'nic':g}, má být ${t[i]}.`}); });
+      if(bad.length>4) m.push({t:'info',s:`… a další (${bad.length-4}).`});
+    }
+  } else m.push({t:'info',s:'Kontrola ještě neproběhla.'});
+  /* floating inputs on gates that drive something */
+  let fl=0;
+  B.slots.forEach(id=>{
+    if(!id||!an.powered[id]) return;
+    const k=MOD_INFO[id].kind; if(k==='sel'||k==='probe') return;
+    gateGeo(k).forEach((g,gi)=>{
+      const outUsed=usedHole(B,id+'.g'+gi+'.o#0')||usedHole(B,id+'.g'+gi+'.o#1');
+      if(!outUsed) return;
+      g.ins.forEach((_,ii)=>{ const b=id+'.g'+gi+'.i'+ii; if(!usedHole(B,b+'#0')&&!usedHole(B,b+'#1')) fl++; });
+    });
+  });
+  if(fl) m.push({t:'info',s:`Nezapojené vstupy na používaných hradlech: ${fl}. Chovají se jako 1, takže u NAND nevadí.`});
+  return m;
+}
+function powReason(an,id){
+  const a=[];
+  if(an.find(id+'.vcc')!==an.rS) a.push('+5V modulu není spojené se zdrojem');
+  if(an.find(id+'.gnd')!==an.rG) a.push('GND modulu není spojené se zdrojem');
+  return a.length?a.join(' a '):'chybí napájení';
+}
+
+/* ===================== master render ===================== */
+function renderAll(){
+  $('#tabSchema').setAttribute('aria-selected',String(state.mode==='schema'));
+  $('#tabBoard').setAttribute('aria-selected',String(state.mode==='board'));
+  $('#modeSchema').hidden=state.mode!=='schema';
+  $('#modeBoard').hidden=state.mode!=='board';
+  renderFn();
+  if(state.mode==='schema') renderSchema(); else renderBoard();
+  save();
+}
+
+/* ===================== events ===================== */
+document.addEventListener('click',e=>{
+  const t=e.target;
+  const chip=t.closest('[data-fn]'); if(chip){ state.fn=chip.dataset.fn; ui.sel=null; ui.pend=null; ui.bSel=null; ui.bMod=null; ui.bPend=null; ui.chkS=null; ui.chkB=null; state.edit=false; ui.confirm=null; sayS(''); sayB(''); renderAll(); return; }
+  const tab=t.closest('[data-mode]'); if(tab){ state.mode=tab.dataset.mode; renderAll(); return; }
+  const cell=t.closest('.cell'); if(cell){
+    const i=+cell.dataset.i;
+    if(state.edit){ const tt=targetOf(); tt[i]=tt[i]===0?1:(tt[i]===1?'X':0); state.defs[state.fn]={t:tt}; afterDef(false); }
+    else { state.cur=i; renderAll(); }
+    return;
+  }
+  if(t.closest('#btnEdit')){ state.edit=!state.edit; renderAll(); return; }
+  if(t.closest('#btnClearFn')){
+    const b=t.closest('#btnClearFn');
+    if(ui.confirm!=='F'){ ui.confirm='F'; b.textContent='Opravdu vymazat?'; setTimeout(()=>{ if(ui.confirm==='F'){ ui.confirm=null; const bb=$('#btnClearFn'); if(bb) bb.textContent='Vymazat funkci'; } },3000); return; }
+    ui.confirm=null; delete state.defs[state.fn]; afterDef(false); return;
+  }
+  if(t.closest('#btnEst')){ state.showEst=!state.showEst; renderEst(); $('#btnEst').setAttribute('aria-pressed',String(state.showEst)); return; }
+});
+document.addEventListener('input',e=>{ if(e.target.id==='fL1'||e.target.id==='fL2') readNote(); });
+document.addEventListener('change',e=>{
+  if(e.target.id==='fForm'){ state.forms[state.fn]=e.target.value; afterDef(false); }
+});
+document.addEventListener('focusout',e=>{
+  const id=e.target.id; if(id!=='fL1'&&id!=='fL2') return;
+  if($('#fnErr').textContent||!isFilled()) return;
+  /* normalize the text in place (sorted, ", " separated) without replacing the DOM, so focus is not lost */
+  const L=listsFor(targetOf(),formOf()); e.target.value=(id==='fL1'?L.a:L.b).join(', ');
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.target.id==='fL1'||e.target.id==='fL2')) e.target.blur(); },true);
+/* schematic */
+const sch=$('#sch');
+function svgPt(svg,e){ const r=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal; return {x:(e.clientX-r.left)*vb.width/r.width,y:(e.clientY-r.top)*vb.height/r.height}; }
+sch.addEventListener('pointerdown',e=>{
+  ui.skipClick=false;
+  const t=e.target.closest('[data-a]'); if(!t) return;
+  const a=t.dataset.a;
+  if(a.startsWith('gate:')){
+    const S=per().sch,id=+a.slice(5),g=gateById(S,id); if(!g) return;
+    const pt=svgPt(sch,e);
+    ui.drag={id,dx:pt.x-g.x,dy:pt.y-g.y,moved:false}; ui.sel={k:'gate',id}; ui.pend=null; ui.skipClick=true;
+    try{ sch.setPointerCapture(e.pointerId); }catch(x){}
+    renderSchema(); e.preventDefault();
+  }
+});
+sch.addEventListener('pointermove',e=>{
+  if(!ui.drag) return;
+  const S=per().sch,g=gateById(S,ui.drag.id); if(!g) return;
+  const pt=svgPt(sch,e),sn=v=>Math.round(v/10)*10;
+  const nx=Math.max(130,Math.min(820-gW(g),sn(pt.x-ui.drag.dx))), ny=Math.max(10,Math.min(550-gH(g),sn(pt.y-ui.drag.dy)));
+  if(nx!==g.x||ny!==g.y){ g.x=nx; g.y=ny; ui.drag.moved=true; renderSchema(true); }
+});
+function endDrag(){ if(ui.drag){ const mv=ui.drag.moved; ui.drag=null; if(mv){ ui.chkS=null; save(); } renderAll(); } }
+sch.addEventListener('pointerup',endDrag);
+sch.addEventListener('pointercancel',endDrag);
+sch.addEventListener('click',e=>{
+  if(ui.skipClick){ ui.skipClick=false; return; }
+  const t=e.target.closest('[data-a]');
+  if(!t){ ui.sel=null; ui.pend=null; sayS(''); renderSchema(); return; }
+  const a=t.dataset.a;
+  if(a.startsWith('pin:')) pinClick(a.slice(4));
+  else if(a.startsWith('wire:')){ ui.sel={k:'wire',id:+a.slice(5)}; ui.pend=null; sayS('Vybraný drát smažeš klávesou Delete nebo tlačítkem nahoře.'); renderSchema(); }
+  else if(a.startsWith('sw:')){ state.cur^=(1<<(+a.slice(3))); ui.chkS=null; renderAll(); }
+});
+sch.addEventListener('keydown',e=>{ if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.a&&e.target.dataset.a.startsWith('sw:')){ e.preventDefault(); state.cur^=(1<<(+e.target.dataset.a.slice(3))); ui.chkS=null; renderAll(); } });
+$('#addNand').addEventListener('click',()=>addGate('NAND'));
+$('#addNot').addEventListener('click',()=>addGate('NOT'));
+$('#selCtl').addEventListener('click',e=>{
+  const nd=e.target.closest('[data-nd]'); if(nd&&ui.sel&&ui.sel.k==='gate'){ stepGateN(ui.sel.id,+nd.dataset.nd); return; }
+  if(e.target.closest('#delSel')) deleteSel();
+});
+$('#liveS').addEventListener('click',()=>{ state.liveS=!state.liveS; renderAll(); });
+$('#chkS').addEventListener('click',runCheckS);
+$('#clearS').addEventListener('click',e=>{
+  const b=e.currentTarget;
+  if(ui.confirm!=='S'){ ui.confirm='S'; b.textContent='Opravdu smazat?'; setTimeout(()=>{ if(ui.confirm==='S'){ ui.confirm=null; b.textContent='Vyčistit schéma'; } },3000); return; }
+  ui.confirm=null; b.textContent='Vyčistit schéma'; per().sch=newSch(); ui.sel=null; ui.pend=null; touchSchema();
+});
+/* board */
+const brd=$('#brd');
+brd.addEventListener('click',e=>{
+  const t=e.target.closest('[data-a]');
+  if(!t){ ui.bSel=null; ui.bPend=null; ui.bMod=null; sayB(''); renderBoard(); return; }
+  const a=t.dataset.a;
+  if(a.startsWith('hole:')) holeClick(a.slice(5));
+  else if(a.startsWith('wire:')){ ui.bSel={k:'wire',id:+a.slice(5)}; ui.bPend=null; sayB('Vybraný drát smažeš tlačítkem Smazat drát nebo klávesou Delete.'); renderBoard(); }
+  else if(a.startsWith('modsel:')) modBarClick(a.slice(7));
+  else if(a.startsWith('slot:')) slotClick(+a.slice(5));
+  else if(a.startsWith('btn:')) toggleSel(+a.slice(4));
+});
+$('#tray').addEventListener('click',e=>{ const c=e.target.closest('[data-tray]'); if(!c) return; ui.bMod=ui.bMod===c.dataset.tray?null:c.dataset.tray; ui.bSel=null; ui.bPend=null; sayB(ui.bMod?'Klikni na volné místo na desce.':''); renderBoard(); });
+$('#autoPow').addEventListener('click',autoPower);
+$('#delWire').addEventListener('click',()=>{ if(ui.bSel){ const B=per().brd; B.wires=B.wires.filter(w=>w.id!==ui.bSel.id); ui.bSel=null; touchBoard(); } });
+$('#pullMod').addEventListener('click',()=>{ if(ui.bMod) pullModule(ui.bMod); });
+$('#liveB').addEventListener('click',()=>{ state.liveB=!state.liveB; renderAll(); });
+$('#chkB').addEventListener('click',runCheckB);
+$('#probeSel').addEventListener('change',e=>{ per().brd.probeOut=+e.target.value; ui.chkB=null; renderAll(); });
+$('#zoomIn').addEventListener('click',()=>{ state.zoom=Math.min(1.6,(state.zoom||1)+0.1); renderBoard(); save(); });
+$('#zoomOut').addEventListener('click',()=>{ state.zoom=Math.max(0.5,(state.zoom||1)-0.1); renderBoard(); save(); });
+$('#clearB').addEventListener('click',e=>{
+  const b=e.currentTarget;
+  if(ui.confirm!=='B'){ ui.confirm='B'; b.textContent='Opravdu smazat?'; setTimeout(()=>{ if(ui.confirm==='B'){ ui.confirm=null; b.textContent='Vyčistit dráty'; } },3000); return; }
+  ui.confirm=null; b.textContent='Vyčistit dráty'; per().brd.wires=[]; ui.bSel=null; ui.bPend=null; touchBoard();
+});
+document.addEventListener('keydown',e=>{
+  if(/^(INPUT|SELECT|TEXTAREA)$/.test((e.target.tagName||''))) return;
+  if(e.key==='Escape'){ ui.pend=null; ui.sel=null; ui.bPend=null; ui.bSel=null; ui.bMod=null; renderAll(); return; }
+  if(e.key==='Delete'||e.key==='Backspace'){
+    if(state.mode==='schema'&&ui.sel){ e.preventDefault(); deleteSel(); }
+    else if(state.mode==='board'&&ui.bSel){ e.preventDefault(); $('#delWire').click(); }
+  }
+});
+
+load();
+renderAll();
+window.__LC__={applyNums,seedTarget,isFilled,parseList,state,ui,per,FDEF,targetOf,evalSchema,analyze,probeVal,addGate,connect,setGateN,runCheckS,runCheckB,minEstimate,allocate,autoPower,holeClick,toggleSel,nodeOf,posOf,HOLES,renderAll,modBarClick,slotClick,pullModule,swapMods,diagBoard,sw8,MOD_IDS,renderBoard,renderSchema};
+})();
+</script>
+
+</body></html>
