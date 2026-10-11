@@ -1,0 +1,809 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Pravdivostní tabulka</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: sticky toolbar with the one big action, a settings strip, then the table beside the minterm notation. Graph-paper ground, blue-pen accent; 1 = inked cell, X = amber. */
+:root{
+  --bg:#EDF0F4; --grid:#E3E8EE; --surface:#FFFFFF; --field:#F6F8FB;
+  --ink:#18202B; --muted:#586374; --line:#CDD5DE; --line-strong:#8A96A6;
+  --head:#E6EBF2; --row-hover:#F1F5FB;
+  --accent:#2250C8; --accent-ink:#FFFFFF;
+  --one-bg:#DCE6FB; --one-fg:#1B45B0; --x-bg:#FBEFD2; --x-fg:#85570A; --zero-fg:#6B7685;
+  --danger:#B3261E; --paper:#FFFFFF; --scrim:rgba(20,28,40,.55);
+  --ok-bg:#E1F2E5; --ok-fg:#1E6B34; --bad-bg:#FBE4E1; --bad-fg:#B3261E;
+  --font-ui:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12171D; --grid:#171E26; --surface:#1A2129; --field:#141A21;
+    --ink:#E6EBF1; --muted:#97A3B2; --line:#2C3742; --line-strong:#5E6B7B;
+    --head:#222B35; --row-hover:#202A35;
+    --accent:#7FA2FF; --accent-ink:#0E1726;
+    --one-bg:#243457; --one-fg:#B6CBFF; --x-bg:#3B3120; --x-fg:#EBBB62; --zero-fg:#7D8999;
+    --danger:#FF8A80; --scrim:rgba(0,0,0,.65);
+    --ok-bg:#1F3A2A; --ok-fg:#8FD6A4; --bad-bg:#432322; --bad-fg:#FF8A80;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12171D; --grid:#171E26; --surface:#1A2129; --field:#141A21;
+  --ink:#E6EBF1; --muted:#97A3B2; --line:#2C3742; --line-strong:#5E6B7B;
+  --head:#222B35; --row-hover:#202A35;
+  --accent:#7FA2FF; --accent-ink:#0E1726;
+  --one-bg:#243457; --one-fg:#B6CBFF; --x-bg:#3B3120; --x-fg:#EBBB62; --zero-fg:#7D8999;
+  --danger:#FF8A80; --scrim:rgba(0,0,0,.65);
+    --ok-bg:#1F3A2A; --ok-fg:#8FD6A4; --bad-bg:#432322; --bad-fg:#FF8A80;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+  color:var(--ink);
+  font:14px/1.45 var(--font-ui);
+  padding-inline:16px;
+  padding-block:12px 48px;
+}
+.wrap{max-width:1120px;margin-inline:auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3,p{margin:0}
+
+.bar{
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:5;
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;
+  padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;
+}
+.bar h1{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.bar .sub{color:var(--muted);font-size:12.5px}
+
+.btn{
+  font:inherit;font-weight:500;height:36px;padding:0 14px;border-radius:8px;
+  border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.btn:hover{background:var(--head)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.quiet{border-color:var(--line)}
+.btn:disabled{opacity:.55;cursor:default}
+.btn svg{flex:none}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.label{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.hint{color:var(--muted);font-size:12.5px;max-width:65ch}
+
+.settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px 28px}
+.field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.seg{position:relative;display:inline-flex;align-self:flex-start;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{
+  min-width:42px;height:34px;display:grid;place-items:center;cursor:pointer;
+  font:500 14px var(--font-mono);border-right:1px solid var(--line);
+}
+.seg label:last-child{border-right:0}
+.seg input:checked + label{background:var(--accent);color:var(--accent-ink)}
+.seg input:focus-visible + label{outline:2px solid var(--accent);outline-offset:-3px}
+.step{display:inline-flex;align-self:flex-start;align-items:center;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
+.step button{width:36px;height:34px;border:0;background:var(--surface);color:var(--ink);font:500 18px var(--font-mono);cursor:pointer}
+.step button:hover:not(:disabled){background:var(--head)}
+.step button:disabled{color:var(--zero-fg);cursor:default}
+.step output{min-width:42px;text-align:center;font:500 14px var(--font-mono);border-inline:1px solid var(--line);height:34px;line-height:34px}
+.names{display:flex;flex-wrap:wrap;gap:6px}
+.name{
+  width:62px;height:34px;text-align:center;border:1px solid var(--line-strong);border-radius:8px;
+  background:var(--field);color:var(--ink);font:500 14px var(--font-mono);
+}
+
+.main{display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px}
+.tablecard{flex:0 1 auto;max-width:100%;display:flex;flex-direction:column;gap:12px}
+.notes{flex:1 1 340px;display:flex;flex-direction:column;gap:12px}
+.panel-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px}
+.panel-head .btns{display:flex;flex-wrap:wrap;gap:8px}
+.exnote{font-size:12.5px;color:var(--x-fg);background:var(--x-bg);border-radius:6px;padding:4px 10px;align-self:flex-start}
+
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+.tt{border-collapse:collapse;font-family:var(--font-mono);font-variant-numeric:tabular-nums;width:100%}
+.tt th,.tt td{padding:0;text-align:center;border-bottom:1px solid var(--line);border-right:1px solid var(--line);height:36px}
+.tt thead th{background:var(--head);font-weight:600;font-size:14.5px;border-bottom:2px solid var(--line-strong);padding-inline:8px}
+.tt th.out{color:var(--accent);min-width:68px}
+.tt th.idx,.tt td.idx{width:48px;color:var(--muted);font-weight:400;border-right:2px solid var(--line-strong)}
+.tt td.in{width:44px;font-weight:500}
+.tt .sep{border-left:2px solid var(--line-strong)}
+.tt tr.grp td,.tt tr.grp th{border-bottom:2px solid var(--line-strong)}
+.tt tbody tr:last-child td,.tt tbody tr:last-child th{border-bottom:0}
+.tt td:last-child,.tt th:last-child{border-right:0}
+.tt tbody tr:hover th,.tt tbody tr:hover td.in{background:var(--row-hover)}
+.cell{
+  display:block;width:100%;height:36px;border:0;background:transparent;cursor:pointer;
+  font:400 15px var(--font-mono);color:var(--zero-fg);
+}
+.cell:hover{box-shadow:inset 0 0 0 2px var(--line-strong)}
+.cell:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.cell.v1{background:var(--one-bg);color:var(--one-fg);font-weight:600}
+.cell.v2{background:var(--x-bg);color:var(--x-fg);font-weight:600}
+
+.fn{display:flex;flex-direction:column;gap:8px;padding-block:12px;border-top:1px solid var(--line)}
+.fn:first-child{border-top:0;padding-top:0}
+.fn h3{font:600 14px var(--font-mono);color:var(--accent)}
+.row2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.lbl{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:12px;color:var(--muted)}
+.txt{
+  width:100%;height:34px;border:1px solid var(--line-strong);border-radius:8px;padding:0 10px;
+  background:var(--field);color:var(--ink);font:14px var(--font-mono);
+}
+.txt[aria-invalid="true"]{border-color:var(--danger)}
+.err{color:var(--danger);font-size:12.5px}
+.err:empty{display:none}
+.zeros{font:12.5px var(--font-mono);color:var(--muted);overflow-wrap:anywhere}
+
+.seg.wide label{padding:0 14px;font-family:var(--font-ui)}
+.chk{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.chk input{width:16px;height:16px;accent-color:var(--accent)}
+.btn.accent{border-color:var(--accent);color:var(--accent)}
+.pstat{background:var(--head);color:var(--ink)}
+.icell{display:block;width:100%;height:36px;border:0;background:transparent;cursor:pointer;font:500 15px var(--font-mono);color:var(--ink)}
+.icell:hover{box-shadow:inset 0 0 0 2px var(--line-strong)}
+.icell:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.icell.e{color:var(--line-strong);font-weight:400}
+.icell.ok{background:var(--ok-bg);color:var(--ok-fg);font-weight:600}
+.icell.bad,.icell.miss{background:var(--bad-bg);color:var(--bad-fg);font-weight:600}
+.tt.hasw thead tr:first-child th{border-bottom:1px solid var(--line)}
+.tt thead tr.wrow th{font-size:12px;font-weight:500;color:var(--muted);height:26px;border-bottom:2px solid var(--line-strong)}
+
+.overlay{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:16px;background:var(--scrim)}
+.sheet{
+  width:min(920px,100%);max-height:100%;display:flex;flex-direction:column;gap:12px;
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;
+}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sheet-head h2{font-size:16px;font-weight:600}
+.preview{overflow:auto;min-height:0;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.preview img{display:block;width:100%;height:auto}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.status{min-height:1.4em;font-size:13px;color:var(--muted)}
+
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;
+  display:flex;align-items:center;gap:14px;max-width:calc(100% - 32px);
+  background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:13.5px;
+}
+.toast button{background:none;border:0;color:inherit;font:inherit;font-weight:600;text-decoration:underline;cursor:pointer;padding:0}
+
+@media (max-width:520px){
+  .panel{padding:12px}
+  .bar{padding:8px 12px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .cell,.btn{transition:background-color .12s,box-shadow .12s}
+}
+</style>
+
+<div class="wrap">
+  <header class="bar">
+    <div>
+      <h1>Pravdivostní tabulka</h1>
+      <p class="sub">Základy digitálních systémů</p>
+    </div>
+    <button type="button" class="btn primary" id="shotBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      Vyfotit tabulku
+    </button>
+  </header>
+
+  <section class="panel settings" aria-label="Nastavení tabulky">
+    <div class="field">
+      <span class="label" id="lblVars">Počet proměnných</span>
+      <div class="seg" role="radiogroup" aria-labelledby="lblVars">
+        <input type="radio" name="nv" id="nv2" value="2"><label for="nv2">2</label>
+        <input type="radio" name="nv" id="nv3" value="3"><label for="nv3">3</label>
+        <input type="radio" name="nv" id="nv4" value="4"><label for="nv4">4</label>
+        <input type="radio" name="nv" id="nv5" value="5"><label for="nv5">5</label>
+      </div>
+    </div>
+    <div class="field">
+      <span class="label" id="lblFn">Počet funkcí</span>
+      <div class="step" role="group" aria-labelledby="lblFn">
+        <button type="button" id="fMinus" aria-label="Ubrat funkci">−</button>
+        <output id="fCount" aria-live="polite">2</output>
+        <button type="button" id="fPlus" aria-label="Přidat funkci">+</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="label">Názvy vstupů</span>
+      <div class="names" id="varNames"></div>
+    </div>
+    <div class="field">
+      <span class="label">Názvy výstupů</span>
+      <div class="names" id="fnNames"></div>
+    </div>
+    <div class="field">
+      <span class="label" id="lblMode">Režim</span>
+      <div class="seg wide" role="radiogroup" aria-labelledby="lblMode">
+        <input type="radio" name="mode" id="mDone" value="done"><label for="mDone">Hotová</label>
+        <input type="radio" name="mode" id="mPrac" value="practice"><label for="mPrac">Cvičit</label>
+      </div>
+      <label class="chk" id="wtWrap"><input type="checkbox" id="wt"> Ukázat váhy sloupců</label>
+    </div>
+  </section>
+
+  <div class="main">
+    <section class="panel tablecard" aria-label="Tabulka">
+      <div class="panel-head">
+        <span class="label">Tabulka</span>
+        <div class="btns">
+          <button type="button" class="btn accent" id="chkBtn" hidden>Zkontrolovat</button>
+          <button type="button" class="btn quiet" id="revBtn" hidden>Ukázat řešení</button>
+          <button type="button" class="btn quiet" id="exBtn">Načíst ukázku</button>
+          <button type="button" class="btn quiet" id="clearBtn">Vymazat hodnoty</button>
+        </div>
+      </div>
+      <p class="hint" id="tHint"></p>
+      <p class="exnote pstat" id="pStat" hidden></p>
+      <p class="exnote" id="exNote">Ukázkové hodnoty. Přepiš je funkcemi ze zadání.</p>
+      <div class="scroll"><table class="tt" id="tt"></table></div>
+    </section>
+
+    <section class="panel notes" aria-label="Zápis funkcí">
+      <span class="label">Zápis pomocí čísel řádků</span>
+      <p class="hint" id="idxHint"></p>
+      <div id="fnList"></div>
+    </section>
+  </div>
+</div>
+
+<div class="overlay" id="shot" role="dialog" aria-modal="true" aria-labelledby="shotTitle" hidden>
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2 id="shotTitle">Fotka tabulky</h2>
+      <button type="button" class="btn quiet" id="shotClose">Zavřít</button>
+    </div>
+    <div class="preview"><img id="shotImg" alt="Náhled pravdivostní tabulky"></div>
+    <p class="hint" id="shotHelp">Soubor se uloží sám (může se ještě ukázat potvrzení). Obrázek můžeš také zkopírovat a vložit do chatu přes Ctrl+V.</p>
+    <div class="actions">
+      <button type="button" class="btn primary" id="copyBtn">Zkopírovat obrázek</button>
+      <button type="button" class="btn" id="saveBtn">Uložit PNG</button>
+    </div>
+    <p class="status" id="shotStatus" role="status"></p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden>
+  <span id="toastMsg"></span>
+  <button type="button" id="toastAct"></button>
+</div>
+
+<script>
+(function(){
+  var MAXV=5, MAXF=6, MAXR=32, KEY='pravdivostni-tabulka-v1';
+  var DEF_V=['x0','x1','x2','x3','x4'], DEF_F=['F0','F1','F2','F3','F4','F5'], OLD_F=['F1','F2','F3','F4','F5','F6'];
+  var SYM=['0','1','X'];
+  var $=function(id){return document.getElementById(id);};
+  var esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+
+  function emptyVals(){var a=[];for(var f=0;f<MAXF;f++){a.push(new Array(MAXR).fill(0));}return a;}
+  function emptyEnt(){var a=[];for(var r=0;r<MAXR;r++)a.push([-1,-1,-1,-1,-1]);return a;}
+  function fromMD(m,d){var a=new Array(MAXR).fill(0);m.forEach(function(i){a[i]=1;});d.forEach(function(i){if(a[i]!==1)a[i]=2;});return a;}
+  function defaultState(){
+    var vals=emptyVals();
+    vals[0]=fromMD([1,3,5,7,8,9,12],[13,15]);
+    vals[1]=fromMD([2,3,6,7,10,11,14],[0]);
+    return {v:2,n:4,fcount:2,vars:DEF_V.slice(),fnames:DEF_F.slice(),vals:vals,example:true,practice:false,weights:true,checked:false,ent:emptyEnt()};
+  }
+  function validState(s){
+    if(!s||typeof s!=='object')return false;
+    if(!(s.n>=2&&s.n<=MAXV)||!(s.fcount>=1&&s.fcount<=MAXF))return false;
+    if(!Array.isArray(s.vars)||s.vars.length<MAXV||!Array.isArray(s.fnames)||s.fnames.length<MAXF)return false;
+    if(!Array.isArray(s.vals)||s.vals.length<MAXF)return false;
+    for(var f=0;f<MAXF;f++){var a=s.vals[f];if(!Array.isArray(a)||a.length<MAXR)return false;for(var r=0;r<MAXR;r++){if(a[r]!==0&&a[r]!==1&&a[r]!==2)return false;}}
+    return true;
+  }
+  function loadState(){
+    try{var raw=localStorage.getItem(KEY);if(raw){var s=JSON.parse(raw);if(validState(s)){if(s.v!==2){s.v=2;s.vars=DEF_V.slice();if(JSON.stringify(s.fnames)===JSON.stringify(OLD_F))s.fnames=DEF_F.slice();}if(!Array.isArray(s.ent)||s.ent.length<MAXR)s.ent=emptyEnt();s.practice=!!s.practice;s.weights=s.weights!==false;s.checked=!!s.checked;return s;}}}catch(e){}
+    return defaultState();
+  }
+  var saveTimer=null;
+  function save(){
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(function(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}},200);
+  }
+
+  var state=loadState();
+  var cellRefs=[];
+  var lastBlob=null;
+  var downloads=null;
+  var size=function(){return 1<<state.n;};
+  var vmsb=function(){var a=[];for(var k=0;k<state.n;k++)a.push(state.vars[state.n-1-k]);return a;};
+  var bitsOf=function(r){var s=r.toString(2);while(s.length<state.n)s='0'+s;return s;};
+  var dashed=function(arr){return arr.length?arr.join(', '):'–';};
+
+  /* ---------- table ---------- */
+  function paintCell(b,f,r){
+    var v=state.vals[f][r];
+    b.className='cell v'+v;
+    b.textContent=SYM[v];
+    b.setAttribute('aria-label',state.fnames[f]+' pro '+bitsOf(r)+': '+(v===2?'neurčeno':v));
+  }
+  function renderTable(){
+    var n=state.n,F=state.fcount,sz=size(),h='<thead><tr><th class="idx" scope="col" title="Číslo řádku">i</th>';
+    var k,f,r;
+    for(k=0;k<n;k++)h+='<th class="in" scope="col">'+esc(state.vars[n-1-k])+'</th>';
+    for(f=0;f<F;f++)h+='<th class="out'+(f===0?' sep':'')+'" scope="col">'+esc(state.fnames[f])+'</th>';
+    h+='</tr>';
+    if(state.practice&&state.weights){
+      h+='<tr class="wrow"><th class="idx" scope="col">váha</th>';
+      for(k=0;k<n;k++)h+='<th class="in" scope="col">'+(1<<(n-1-k))+'</th>';
+      h+='<th class="out sep" colspan="'+F+'" scope="col"></th></tr>';
+    }
+    h+='</thead><tbody>';
+    for(r=0;r<sz;r++){
+      h+='<tr'+((sz>4&&(r+1)%4===0&&r<sz-1)?' class="grp"':'')+'><th class="idx" scope="row">'+r+'</th>';
+      for(k=0;k<n;k++){
+        if(state.practice)h+='<td class="in"><button type="button" class="icell" data-r="'+r+'" data-b="'+(n-1-k)+'"></button></td>';
+        else h+='<td class="in">'+((r>>(n-1-k))&1)+'</td>';
+      }
+      for(f=0;f<F;f++)h+='<td class="out'+(f===0?' sep':'')+'"><button type="button" class="cell" data-f="'+f+'" data-r="'+r+'"></button></td>';
+      h+='</tr>';
+    }
+    h+='</tbody>';
+    $('tt').innerHTML=h;
+    $('tt').className='tt'+(state.practice&&state.weights?' hasw':'');
+    cellRefs=[];
+    for(f=0;f<F;f++)cellRefs.push([]);
+    var cells=$('tt').querySelectorAll('.cell');
+    for(var i=0;i<cells.length;i++){
+      var b=cells[i],ff=+b.dataset.f,rr=+b.dataset.r;
+      cellRefs[ff][rr]=b;
+      paintCell(b,ff,rr);
+    }
+    paintAllI();
+  }
+  function paintI(b){
+    var r=+b.dataset.r,bt=+b.dataset.b,e=state.ent[r][bt],cls='icell';
+    if(e<0)cls+=state.checked?' e miss':' e';
+    else if(state.checked)cls+=(e===((r>>bt)&1))?' ok':' bad';
+    b.className=cls;
+    b.textContent=e<0?'·':String(e);
+    b.setAttribute('aria-label',state.vars[bt]+', řádek '+r+': '+(e<0?'prázdné':e));
+  }
+  function paintAllI(){var cs=$('tt').querySelectorAll('.icell');for(var i=0;i<cs.length;i++)paintI(cs[i]);}
+  function entStats(){
+    var sz=size(),n=state.n,ok=0,wrong=0,empty=0;
+    for(var r=0;r<sz;r++){
+      var rowOk=true;
+      for(var b=0;b<n;b++){var e=state.ent[r][b];if(e<0){empty++;rowOk=false;}else if(e!==((r>>b)&1)){wrong++;rowOk=false;}}
+      if(rowOk)ok++;
+    }
+    return {ok:ok,wrong:wrong,empty:empty,rows:sz};
+  }
+  function updatePStat(){
+    var el=$('pStat');
+    if(!state.practice||!state.checked){el.hidden=true;return;}
+    var s=entStats();
+    el.hidden=false;
+    el.textContent=(s.wrong===0&&s.empty===0)?('Zkontrolováno: všech '+s.rows+' řádků je správně.'):('Zkontrolováno: '+s.ok+' z '+s.rows+' řádků správně'+(s.wrong?', chybných políček '+s.wrong:'')+(s.empty?', prázdných '+s.empty:'')+'.');
+  }
+  function setEnt(r,b,v){state.ent[r][b]=v;state.checked=false;paintAllI();updatePStat();save();}
+  function updateNote(){$('exNote').hidden=!state.example;}
+  function setCell(f,r,v){
+    state.vals[f][r]=v;
+    state.example=false;
+    paintCell(cellRefs[f][r],f,r);
+    syncNotation(f,false);
+    updateNote();
+    save();
+  }
+  function focusCell(f,r){var b=cellRefs[f]&&cellRefs[f][r];if(b)b.focus();}
+
+  $('tt').addEventListener('click',function(e){
+    var b=e.target.closest('.cell');if(!b)return;
+    var f=+b.dataset.f,r=+b.dataset.r;
+    setCell(f,r,(state.vals[f][r]+1)%3);
+  });
+  $('tt').addEventListener('keydown',function(e){
+    var b=e.target.closest('.cell');if(!b||e.ctrlKey||e.metaKey||e.altKey)return;
+    var f=+b.dataset.f,r=+b.dataset.r,sz=size(),F=state.fcount,k=e.key;
+    if(k==='0'||k==='1'||k==='x'||k==='X'||k==='-'){
+      e.preventDefault();
+      setCell(f,r,k==='0'?0:k==='1'?1:2);
+      focusCell(f,Math.min(r+1,sz-1));
+    }else if(k==='ArrowDown'){e.preventDefault();focusCell(f,Math.min(r+1,sz-1));}
+    else if(k==='ArrowUp'){e.preventDefault();focusCell(f,Math.max(r-1,0));}
+    else if(k==='ArrowRight'){e.preventDefault();focusCell(Math.min(f+1,F-1),r);}
+    else if(k==='ArrowLeft'){e.preventDefault();focusCell(Math.max(f-1,0),r);}
+  });
+
+  $('tt').addEventListener('click',function(e){
+    var b=e.target.closest('.icell');if(!b)return;
+    var r=+b.dataset.r,bt=+b.dataset.b,cur=state.ent[r][bt];
+    setEnt(r,bt,cur<0?0:(cur===0?1:-1));
+  });
+  $('tt').addEventListener('keydown',function(e){
+    var b=e.target.closest('.icell');if(!b||e.ctrlKey||e.metaKey||e.altKey)return;
+    var r=+b.dataset.r,bt=+b.dataset.b,n=state.n,sz=size(),k=e.key;
+    function go(rr,bb){var t=$('tt').querySelector('.icell[data-r="'+rr+'"][data-b="'+bb+'"]');if(t)t.focus();}
+    if(k==='0'||k==='1'){
+      e.preventDefault();setEnt(r,bt,+k);
+      if(bt>0)go(r,bt-1);else if(r<sz-1)go(r+1,n-1);
+    }else if(k==='Backspace'||k==='Delete'){e.preventDefault();setEnt(r,bt,-1);}
+    else if(k==='ArrowDown'){e.preventDefault();go(Math.min(r+1,sz-1),bt);}
+    else if(k==='ArrowUp'){e.preventDefault();go(Math.max(r-1,0),bt);}
+    else if(k==='ArrowRight'){e.preventDefault();go(r,Math.max(bt-1,0));}
+    else if(k==='ArrowLeft'){e.preventDefault();go(r,Math.min(bt+1,n-1));}
+  });
+
+  /* ---------- notation (minterms) ---------- */
+  function listsOf(f){
+    var m=[],d=[],z=[],sz=size();
+    for(var r=0;r<sz;r++){var v=state.vals[f][r];(v===1?m:v===2?d:z).push(r);}
+    return {m:m,d:d,z:z};
+  }
+  function parseList(str,sz){
+    var out=new Set(),bad=[],tokens=str.split(/[\s,;]+/).filter(Boolean);
+    tokens.forEach(function(t){
+      var range=t.match(/^(\d+)[-–](\d+)$/);
+      if(/^\d+$/.test(t)){var k=+t;if(k<sz)out.add(k);else bad.push(t);}
+      else if(range){
+        var a=+range[1],b=+range[2],tmp;
+        if(a>b){tmp=a;a=b;b=tmp;}
+        if(b>=sz)bad.push(t);else for(var i=a;i<=b;i++)out.add(i);
+      }else bad.push(t);
+    });
+    return {set:out,bad:bad};
+  }
+  function syncNotation(f,keepInputs){
+    var L=listsOf(f);
+    if(!keepInputs){
+      var mi=$('m-'+f),di=$('d-'+f);
+      if(mi){mi.value=L.m.join(', ');mi.setAttribute('aria-invalid','false');}
+      if(di){di.value=L.d.join(', ');di.setAttribute('aria-invalid','false');}
+      var er=$('e-'+f);if(er)er.textContent='';
+    }
+    var z=$('z-'+f);
+    if(z)z.textContent='Nuly Π M('+dashed(L.z)+')';
+  }
+  function renderNotation(){
+    var box=$('fnList'),h='',f;
+    for(f=0;f<state.fcount;f++){
+      h+='<div class="fn"><h3>'+esc(state.fnames[f])+'</h3><div class="row2">'
+        +'<label class="lbl" for="m-'+f+'"><span>Jedničky Σ m</span><input class="txt" id="m-'+f+'" data-f="'+f+'" placeholder="např. 1, 3, 5–7" autocomplete="off" spellcheck="false"></label>'
+        +'<label class="lbl" for="d-'+f+'"><span>Neurčené d</span><input class="txt" id="d-'+f+'" data-f="'+f+'" placeholder="např. 0, 15" autocomplete="off" spellcheck="false"></label>'
+        +'</div><div class="err" id="e-'+f+'"></div><div class="zeros" id="z-'+f+'"></div></div>';
+    }
+    box.innerHTML=h;
+    for(f=0;f<state.fcount;f++)syncNotation(f,false);
+    var n=state.n,r=n>=3?5:1;
+    $('idxHint').textContent='Číslo řádku i je vstup '+vmsb().join('')+' čtený jako dvojkové číslo, '+vmsb()[0]+' je nejvyšší bit. Například '+bitsOf(r)+' je řádek '+r+'. Čísla můžeš psát i jako rozsah, třeba 4–7.';
+  }
+  $('fnList').addEventListener('input',function(e){
+    var el=e.target;if(!el.dataset||el.dataset.f===undefined)return;
+    var f=+el.dataset.f,sz=size();
+    var pm=parseList($('m-'+f).value,sz),pd=parseList($('d-'+f).value,sz);
+    for(var r=0;r<sz;r++){
+      state.vals[f][r]=pm.set.has(r)?1:pd.set.has(r)?2:0;
+      paintCell(cellRefs[f][r],f,r);
+    }
+    $('m-'+f).setAttribute('aria-invalid',pm.bad.length?'true':'false');
+    $('d-'+f).setAttribute('aria-invalid',pd.bad.length?'true':'false');
+    var bad=pm.bad.concat(pd.bad);
+    $('e-'+f).textContent=bad.length?('Nerozumím: '+bad.join(', ')+'. Řádky jsou 0 až '+(sz-1)+'.'):'';
+    state.example=false;
+    syncNotation(f,true);
+    updateNote();
+    save();
+  });
+  $('fnList').addEventListener('change',function(e){
+    var el=e.target;if(!el.dataset||el.dataset.f===undefined)return;
+    var f=+el.dataset.f;
+    if(!$('e-'+f).textContent)syncNotation(f,false);
+  });
+
+  /* ---------- settings ---------- */
+  function renderSettings(){
+    var r=document.querySelector('input[name="nv"][value="'+state.n+'"]');if(r)r.checked=true;
+    var mr=document.querySelector('input[name="mode"][value="'+(state.practice?'practice':'done')+'"]');if(mr)mr.checked=true;
+    $('wt').checked=state.weights;$('wtWrap').hidden=!state.practice;
+    $('chkBtn').hidden=!state.practice;$('revBtn').hidden=!state.practice;
+    $('tHint').textContent=state.practice
+      ?'Vyplň sloupce vstupů pro každý řádek: index rozlož na váhy a napiš 0 nebo 1. Klikni do políčka, nebo piš 0 a 1 a kurzor skočí sám dál. Výstupy se vyplňují jako dřív. Až budeš hotový, zkontroluj to.'
+      :'Klikni do buňky a hodnota se přepne 0 → 1 → X. Nebo piš 0, 1 a X a šipkami se pohybuj. X je neurčený stav.';
+    updatePStat();
+    $('fCount').textContent=state.fcount;
+    $('fMinus').disabled=state.fcount<=1;
+    $('fPlus').disabled=state.fcount>=MAXF;
+    var h='',i;
+    for(i=0;i<state.n;i++)h+='<input class="name" data-kind="v" data-i="'+(state.n-1-i)+'" maxlength="6" value="'+esc(state.vars[state.n-1-i])+'" aria-label="Název vstupu '+(i+1)+'" autocomplete="off" spellcheck="false">';
+    $('varNames').innerHTML=h;
+    h='';
+    for(i=0;i<state.fcount;i++)h+='<input class="name" data-kind="f" data-i="'+i+'" maxlength="6" value="'+esc(state.fnames[i])+'" aria-label="Název výstupu '+(i+1)+'" autocomplete="off" spellcheck="false">';
+    $('fnNames').innerHTML=h;
+  }
+  function fullRender(){renderSettings();renderTable();renderNotation();updateNote();}
+
+  document.querySelectorAll('input[name="nv"]').forEach(function(r){
+    r.addEventListener('change',function(){
+      if(!r.checked)return;
+      state.n=+r.value;state.example=false;
+      fullRender();save();
+    });
+  });
+  $('fMinus').addEventListener('click',function(){if(state.fcount>1){state.fcount--;fullRender();save();}});
+  $('fPlus').addEventListener('click',function(){if(state.fcount<MAXF){state.fcount++;fullRender();save();}});
+  function onName(e){
+    var el=e.target;if(!el.dataset||!el.dataset.kind)return;
+    var i=+el.dataset.i,isV=el.dataset.kind==='v';
+    var val=el.value.trim()||(isV?DEF_V[i]:DEF_F[i]);
+    (isV?state.vars:state.fnames)[i]=val;
+    renderTable();renderNotation();save();
+  }
+  $('varNames').addEventListener('input',onName);
+  $('fnNames').addEventListener('input',onName);
+
+  document.querySelectorAll('input[name="mode"]').forEach(function(r){
+    r.addEventListener('change',function(){
+      if(!r.checked)return;
+      state.practice=(r.value==='practice');state.checked=false;
+      fullRender();save();
+    });
+  });
+  $('wt').addEventListener('change',function(){state.weights=$('wt').checked;renderTable();save();});
+  $('chkBtn').addEventListener('click',function(){state.checked=true;paintAllI();updatePStat();save();});
+  $('revBtn').addEventListener('click',function(){
+    withUndo('Řešení doplněno.',function(){
+      for(var r=0;r<size();r++)for(var b=0;b<state.n;b++)state.ent[r][b]=(r>>b)&1;
+      state.checked=false;
+    });
+  });
+
+  /* ---------- toast + undo ---------- */
+  var toastTimer=null;
+  function showToast(msg,actLabel,act){
+    $('toastMsg').textContent=msg;
+    var b=$('toastAct');
+    b.hidden=!actLabel;b.textContent=actLabel||'';
+    b.onclick=function(){if(act)act();$('toast').hidden=true;};
+    $('toast').hidden=false;
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){$('toast').hidden=true;},8000);
+  }
+  function withUndo(msg,fn){
+    var snap=JSON.stringify(state);
+    fn();fullRender();save();
+    showToast(msg,'Vrátit',function(){state=JSON.parse(snap);fullRender();save();});
+  }
+  $('clearBtn').addEventListener('click',function(){
+    withUndo('Hodnoty vymazány.',function(){state.vals=emptyVals();state.ent=emptyEnt();state.checked=false;state.example=false;});
+  });
+  $('exBtn').addEventListener('click',function(){
+    withUndo('Ukázka načtena.',function(){var p=state.practice;state=defaultState();state.practice=p;});
+  });
+
+  /* ---------- photo of the table ---------- */
+  var MONO='"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace';
+  var SANS='"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif';
+
+  function dataURLtoBlob(u){
+    var bin=atob(u.split(',')[1]),a=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);
+    return new Blob([a],{type:'image/png'});
+  }
+  async function buildImage(){
+    try{
+      await Promise.all([
+        document.fonts.load('600 15px "IBM Plex Mono"'),document.fonts.load('400 14px "IBM Plex Mono"'),
+        document.fonts.load('500 14px "IBM Plex Mono"'),document.fonts.load('600 20px "IBM Plex Sans"'),
+        document.fonts.load('400 13px "IBM Plex Sans"')
+      ]);
+    }catch(e){}
+    var n=state.n,F=state.fcount,sz=size();
+    var names=state.fnames.slice(0,F),vars=vmsb();
+    var mc=document.createElement('canvas').getContext('2d');
+    mc.font='600 15px '+MONO;
+    var pad=28,idxW=50,inW=46,headH=40,rowH=30;
+    var outW=names.map(function(nm){return Math.max(64,Math.ceil(mc.measureText(nm).width)+28);});
+    var outSum=outW.reduce(function(a,b){return a+b;},0);
+    var tableW=idxW+n*inW+outSum;
+    var W=Math.max(tableW+pad*2,560);
+    var tableTop=pad+58,tableH=headH+sz*rowH;
+
+    var anyX=false,f,r,k;
+    for(f=0;f<F;f++)for(r=0;r<sz;r++)if(state.vals[f][r]===2)anyX=true;
+    var legend=['i = číslo řádku ('+vars.join('')+' čtené jako dvojkové číslo, '+vars[0]+' je nejvyšší bit)'];
+    if(anyX)legend.push('X = neurčený stav');
+    if(state.practice&&state.checked){var ps=entStats();legend.push('Cvičení: '+ps.ok+' z '+ps.rows+' řádků vyplněno správně.');}
+
+    mc.font='500 14px '+MONO;
+    var labW=0;
+    names.forEach(function(nm){labW=Math.max(labW,mc.measureText(nm).width);});
+    labW+=18;
+    var maxTextW=W-pad*2-labW;
+    function wrap(text){
+      var words=text.split(' '),lines=[],cur='';
+      words.forEach(function(w){
+        var t=cur?cur+' '+w:w;
+        if(mc.measureText(t).width>maxTextW&&cur){lines.push(cur);cur=w;}else cur=t;
+      });
+      if(cur)lines.push(cur);
+      return lines;
+    }
+    var blocks=[];
+    for(f=0;f<F;f++){
+      var L=listsOf(f);
+      var mLine='Σ m('+dashed(L.m)+')'+(L.d.length?'  +  Σ d('+L.d.join(', ')+')':'');
+      var zLine='Π M('+dashed(L.z)+')'+(L.d.length?'  ·  Π D('+L.d.join(', ')+')':'');
+      blocks.push({name:names[f],lines:wrap(mLine).concat(wrap(zLine))});
+    }
+    var lineH=21,blockGap=12;
+    var notesTop=tableTop+tableH+22;
+    var legendH=legend.length*18;
+    var blocksTop=notesTop+legendH+14;
+    var H=blocksTop;
+    blocks.forEach(function(b){H+=b.lines.length*lineH+blockGap;});
+    H=H-blockGap+pad;
+
+    var S=2,cv=document.createElement('canvas');
+    cv.width=W*S;cv.height=H*S;
+    var c=cv.getContext('2d');
+    c.scale(S,S);
+    c.fillStyle='#FFFFFF';c.fillRect(0,0,W,H);
+    c.textBaseline='middle';
+
+    c.fillStyle='#18202B';c.font='600 20px '+SANS;c.textAlign='left';
+    c.fillText('Pravdivostní tabulka',pad,pad+10);
+    c.fillStyle='#586374';c.font='400 13px '+SANS;
+    c.fillText('Vstupy '+vars.join(', ')+'   ·   Výstupy '+names.join(', ')+'   ·   '+sz+(sz===4?' řádky':' řádků')+(state.practice?'   ·   cvičení':''),pad,pad+36);
+
+    var x0=pad,inStart=x0+idxW,outStart=inStart+n*inW,bodyTop=tableTop+headH;
+    var outX=[],acc=outStart;
+    for(f=0;f<F;f++){outX.push(acc);acc+=outW[f];}
+
+    c.fillStyle='#E6EBF2';c.fillRect(x0,tableTop,tableW,headH);
+    for(f=0;f<F;f++)for(r=0;r<sz;r++){
+      var v=state.vals[f][r];
+      if(v===1){c.fillStyle='#D8E4FA';c.fillRect(outX[f],bodyTop+r*rowH,outW[f],rowH);}
+      else if(v===2){c.fillStyle='#FBEFD2';c.fillRect(outX[f],bodyTop+r*rowH,outW[f],rowH);}
+    }
+    if(state.practice&&state.checked){
+      for(r=0;r<sz;r++)for(k=0;k<n;k++){
+        var bt0=n-1-k,good=state.ent[r][bt0]===((r>>bt0)&1);
+        c.fillStyle=good?'#E1F2E5':'#FBE4E1';
+        c.fillRect(inStart+k*inW,bodyTop+r*rowH,inW,rowH);
+      }
+    }
+    function line(x1,y1,x2,y2,w,col){c.strokeStyle=col;c.lineWidth=w;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();}
+    var thin='#C3CCD8',strong='#5F6B7B';
+    for(r=1;r<sz;r++)line(x0,bodyTop+r*rowH,x0+tableW,bodyTop+r*rowH,1,thin);
+    for(k=1;k<n;k++)line(inStart+k*inW,tableTop,inStart+k*inW,tableTop+tableH,1,thin);
+    for(f=1;f<F;f++)line(outX[f],tableTop,outX[f],tableTop+tableH,1,thin);
+    if(sz>4)for(r=4;r<sz;r+=4)line(x0,bodyTop+r*rowH,x0+tableW,bodyTop+r*rowH,2,strong);
+    line(x0,bodyTop,x0+tableW,bodyTop,2,strong);
+    line(inStart,tableTop,inStart,tableTop+tableH,2,strong);
+    line(outStart,tableTop,outStart,tableTop+tableH,2,strong);
+    c.strokeStyle=strong;c.lineWidth=2;c.strokeRect(x0,tableTop,tableW,tableH);
+
+    c.textAlign='center';
+    c.font='400 14px '+MONO;c.fillStyle='#586374';
+    c.fillText('i',x0+idxW/2,tableTop+headH/2);
+    c.font='600 15px '+MONO;c.fillStyle='#18202B';
+    for(k=0;k<n;k++)c.fillText(vars[k],inStart+k*inW+inW/2,tableTop+headH/2);
+    c.fillStyle='#1F4FBF';
+    for(f=0;f<F;f++)c.fillText(names[f],outX[f]+outW[f]/2,tableTop+headH/2);
+    for(r=0;r<sz;r++){
+      var cy=bodyTop+r*rowH+rowH/2;
+      c.font='400 14px '+MONO;c.fillStyle='#6B7685';
+      c.fillText(String(r),x0+idxW/2,cy);
+      c.font='500 15px '+MONO;c.fillStyle='#18202B';
+      var bits=bitsOf(r);
+      for(k=0;k<n;k++){
+        var ch=bits.charAt(k);
+        if(state.practice){
+          var bb=n-1-k,ee=state.ent[r][bb];
+          ch=ee<0?'':String(ee);
+          c.fillStyle=state.checked?((ee===((r>>bb)&1))?'#1E6B34':'#B3261E'):'#18202B';
+          c.font=(state.checked?'600':'500')+' 15px '+MONO;
+        }else{c.fillStyle='#18202B';c.font='500 15px '+MONO;}
+        c.fillText(ch,inStart+k*inW+inW/2,cy);
+      }
+      for(f=0;f<F;f++){
+        var val=state.vals[f][r];
+        c.font=(val===0?'400':'600')+' 15px '+MONO;
+        c.fillStyle=val===0?'#8791A0':val===1?'#1B45B0':'#85570A';
+        c.fillText(SYM[val],outX[f]+outW[f]/2,cy);
+      }
+    }
+
+    c.textAlign='left';
+    c.font='400 12.5px '+SANS;c.fillStyle='#586374';
+    legend.forEach(function(t,i){c.fillText(t,pad,notesTop+9+i*18);});
+    var y=blocksTop;
+    blocks.forEach(function(b){
+      c.font='600 14px '+MONO;c.fillStyle='#1F4FBF';
+      c.fillText(b.name,pad,y+lineH/2);
+      c.font='500 14px '+MONO;c.fillStyle='#18202B';
+      b.lines.forEach(function(t,i){c.fillText(t,pad+labW,y+i*lineH+lineH/2);});
+      y+=b.lines.length*lineH+blockGap;
+    });
+
+    var url=cv.toDataURL('image/png');
+    return {url:url,blob:dataURLtoBlob(url)};
+  }
+
+  var opener=null;
+  async function openShot(){
+    var btn=$('shotBtn');
+    btn.disabled=true;opener=btn;
+    try{
+      var res=await buildImage();
+      lastBlob=res.blob;
+      $('shotImg').src=res.url;
+      $('shotStatus').textContent='';
+      $('shot').hidden=false;
+      $('saveBtn').focus();
+      autoSend();
+    }catch(e){
+      showToast('Fotku se nepodařilo vytvořit.');
+    }finally{
+      btn.disabled=false;
+    }
+  }
+  function closeShot(){
+    $('shot').hidden=true;
+    if(opener)opener.focus();
+  }
+  $('shotBtn').addEventListener('click',openShot);
+  $('shotClose').addEventListener('click',closeShot);
+  $('shot').addEventListener('click',function(e){if(e.target===$('shot'))closeShot();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('shot').hidden)closeShot();});
+
+  var FILENAME='pravdivostni-tabulka.png';
+  var assets=null;
+  var capsReady=(async function(){
+    try{
+      if(window.claude&&window.claude.use){
+        downloads=await window.claude.use('downloads');
+        assets=await window.claude.use('assets');
+      }
+    }catch(e){}
+  })();
+  function say(t){$('shotStatus').textContent=t;}
+  function errCode(e){return (e&&(e.code||e.name))||'neznámá chyba';}
+  async function saveFile(){
+    await capsReady;
+    if(!downloads)return {ok:false,why:'tato stránka teď nemá povolené ukládání souborů'};
+    try{await downloads.save({filename:FILENAME,data:lastBlob});return {ok:true};}
+    catch(e){return {ok:false,declined:!!(e&&e.code==='declined'),why:'kód '+errCode(e)};}
+  }
+  async function backupCopy(){
+    await capsReady;
+    if(!assets)return false;
+    try{await assets.upload(lastBlob,{type:'image/png'});return true;}catch(e){return false;}
+  }
+  function saveMsg(r){
+    return r.ok?('Uloženo jako '+FILENAME+'. Přilož ho do chatu.'):(r.declined?'Ukládání jsi zrušil.':'Soubor se nepodařilo uložit ('+r.why+').');
+  }
+  async function autoSend(){
+    say('Ukládám…');
+    var r=await saveFile();
+    var b=await backupCopy();
+    say(saveMsg(r)+(b?' Kopie obrázku je zároveň uložená u stránky, Claude ji umí načíst sám.':''));
+  }
+  $('saveBtn').addEventListener('click',async function(){say('Ukládám…');say(saveMsg(await saveFile()));});
+  $('copyBtn').addEventListener('click',async function(){
+    try{
+      if(!(window.ClipboardItem&&navigator.clipboard&&navigator.clipboard.write))throw {name:'schránka není dostupná'};
+      await navigator.clipboard.write([new ClipboardItem({'image/png':lastBlob})]);
+      say('Obrázek je ve schránce. Vlož ho do chatu (Ctrl+V).');
+    }catch(e){
+      say('Kopírování tady nejde ('+errCode(e)+'). Zkus Uložit PNG, nebo na obrázek klikni pravým tlačítkem a zkopíruj ho.');
+    }
+  });
+
+  fullRender();
+})();
+</script>
+
+</body></html>

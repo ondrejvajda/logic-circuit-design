@@ -1,0 +1,1894 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Karnaughovy mapy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap">
+<style>
+/* Layout: sticky toolbar with the photo button, a settings strip, then a grid of map cards. Each map follows the lecture notation: x0 lowest bit, bars on the edges mark where a variable is 1. */
+:root{
+  --bg:#EDF0F4; --grid:#E3E8EE; --surface:#FFFFFF; --field:#F6F8FB;
+  --ink:#18202B; --muted:#586374; --line:#CDD5DE; --line-strong:#8A96A6;
+  --head:#E6EBF2;
+  --accent:#2250C8; --accent-ink:#FFFFFF;
+  --one-bg:#DCE6FB; --one-fg:#1B45B0; --x-bg:#FBEFD2; --x-fg:#85570A; --zero-fg:#6B7685;
+  --danger:#B3261E; --paper:#FFFFFF; --scrim:rgba(20,28,40,.55);
+  --ok-bg:#E1F2E5; --ok-fg:#1E6B34; --bad-bg:#FBE4E1; --bad-fg:#B3261E;
+  --l0:#C8341C; --l1:#1C8A4A; --l2:#8A3DC2; --l3:#C17400; --l4:#0B87A3; --l5:#C0307A;
+  --font-ui:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12171D; --grid:#171E26; --surface:#1A2129; --field:#141A21;
+    --ink:#E6EBF1; --muted:#97A3B2; --line:#2C3742; --line-strong:#5E6B7B;
+    --head:#222B35;
+    --accent:#7FA2FF; --accent-ink:#0E1726;
+    --one-bg:#243457; --one-fg:#B6CBFF; --x-bg:#3B3120; --x-fg:#EBBB62; --zero-fg:#7D8999;
+    --danger:#FF8A80; --scrim:rgba(0,0,0,.65);
+    --ok-bg:#1F3A2A; --ok-fg:#8FD6A4; --bad-bg:#432322; --bad-fg:#FF8A80;
+    --l0:#FF7A63; --l1:#5FD08A; --l2:#C58BFF; --l3:#F0B04A; --l4:#4CC9E4; --l5:#FF7FB8;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12171D; --grid:#171E26; --surface:#1A2129; --field:#141A21;
+  --ink:#E6EBF1; --muted:#97A3B2; --line:#2C3742; --line-strong:#5E6B7B;
+  --head:#222B35;
+  --accent:#7FA2FF; --accent-ink:#0E1726;
+  --one-bg:#243457; --one-fg:#B6CBFF; --x-bg:#3B3120; --x-fg:#EBBB62; --zero-fg:#7D8999;
+  --danger:#FF8A80; --scrim:rgba(0,0,0,.65);
+    --ok-bg:#1F3A2A; --ok-fg:#8FD6A4; --bad-bg:#432322; --bad-fg:#FF8A80;
+    --l0:#FF7A63; --l1:#5FD08A; --l2:#C58BFF; --l3:#F0B04A; --l4:#4CC9E4; --l5:#FF7FB8;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  background:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+  color:var(--ink);
+  font:14px/1.45 var(--font-ui);
+  padding-inline:16px;
+  padding-block:12px 48px;
+}
+.wrap{max-width:1180px;margin-inline:auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3,p{margin:0}
+sub{font-size:.72em;line-height:0}
+
+.bar{
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:5;
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;
+  padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;
+}
+.bar h1{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.bar .sub{color:var(--muted);font-size:12.5px}
+
+.btn{
+  font:inherit;font-weight:500;height:36px;padding:0 14px;border-radius:8px;
+  border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.btn:hover{background:var(--head)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.quiet{border-color:var(--line)}
+.btn:disabled{opacity:.55;cursor:default}
+.btn svg{flex:none}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.label{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.hint{color:var(--muted);font-size:12.5px;max-width:70ch}
+
+.settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px 28px}
+.field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.seg{position:relative;display:inline-flex;align-self:flex-start;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{
+  min-width:42px;height:34px;display:grid;place-items:center;cursor:pointer;
+  font:500 14px var(--font-mono);border-right:1px solid var(--line);
+}
+.seg label:last-child{border-right:0}
+.seg input:checked + label{background:var(--accent);color:var(--accent-ink)}
+.seg input:focus-visible + label{outline:2px solid var(--accent);outline-offset:-3px}
+.step{display:inline-flex;align-self:flex-start;align-items:center;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
+.step button{width:36px;height:34px;border:0;background:var(--surface);color:var(--ink);font:500 18px var(--font-mono);cursor:pointer}
+.step button:hover:not(:disabled){background:var(--head)}
+.step button:disabled{color:var(--zero-fg);cursor:default}
+.step output{min-width:42px;text-align:center;font:500 14px var(--font-mono);border-inline:1px solid var(--line);height:34px;line-height:34px}
+
+.panel-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px}
+.panel-head .btns{display:flex;flex-wrap:wrap;gap:8px}
+.exnote{font-size:12.5px;color:var(--x-fg);background:var(--x-bg);border-radius:6px;padding:4px 10px;align-self:flex-start}
+.intro{display:flex;flex-direction:column;gap:10px}
+
+.maps{
+  display:grid;gap:16px;align-items:start;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,var(--cardw,300px)),1fr));
+}
+.kcard{display:flex;flex-direction:column;gap:12px}
+.khead .lbl{flex-direction:row;align-items:center;gap:10px}
+.name{
+  width:96px;height:34px;text-align:center;border:1px solid var(--line-strong);border-radius:8px;
+  background:var(--field);color:var(--ink);font:500 14px var(--font-mono);
+}
+.kmap svg{display:block;width:100%;height:auto;overflow:visible}
+
+.kmap .kr{stroke:var(--line);stroke-width:1}
+.kmap .kc0{fill:var(--surface)}
+.kmap .kc1{fill:var(--one-bg)}
+.kmap .kc2{fill:var(--x-bg)}
+.kmap .kbord{fill:none;stroke:var(--line-strong);stroke-width:2;pointer-events:none}
+.kmap .ksep{stroke:var(--line-strong);stroke-width:2;pointer-events:none}
+.kmap .kbar{stroke:var(--accent);stroke-width:2.6;stroke-linecap:round}
+.kmap .klab{fill:var(--ink);font:italic 500 14px var(--font-ui)}
+.kmap .kname{fill:var(--accent);font:600 16px var(--font-ui)}
+.kmap .kslash{stroke:var(--line-strong);stroke-width:1.5}
+.kmap .kv{font:600 24px var(--font-mono);text-anchor:middle;pointer-events:none}
+.kmap .kv0{fill:var(--zero-fg);font-weight:400}
+.kmap .kv1{fill:var(--one-fg)}
+.kmap .kv2{fill:var(--x-fg)}
+.kmap .ki{font:400 10.5px var(--font-mono);fill:var(--muted);text-anchor:end;pointer-events:none}
+.kcell{cursor:pointer;outline:none}
+.kcell:hover .kr{stroke:var(--line-strong)}
+.kcell:focus-visible .kr{stroke:var(--accent);stroke-width:3}
+
+.row2{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.lbl{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:12px;color:var(--muted)}
+.txt{
+  width:100%;height:34px;border:1px solid var(--line-strong);border-radius:8px;padding:0 10px;
+  background:var(--field);color:var(--ink);font:14px var(--font-mono);
+}
+.txt[aria-invalid="true"]{border-color:var(--danger)}
+.err{color:var(--danger);font-size:12.5px}
+.err:empty{display:none}
+.kline{font:13px/1.55 var(--font-mono);color:var(--ink);overflow-wrap:anywhere}
+.kline + .kline{margin-top:-8px}
+
+.tabs{display:flex;flex-wrap:wrap;align-self:flex-start;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
+.tabs button{font:500 12.5px var(--font-ui);height:32px;padding:0 12px;border:0;border-right:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.tabs button:last-child{border-right:0}
+.tabs button:hover{background:var(--head)}
+.tabs button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.kin{display:flex;flex-direction:column;gap:12px}
+.lpanel{display:flex;flex-direction:column;gap:10px}
+.lpanel .hint{font-size:12.5px}
+.lactions{display:flex;flex-wrap:wrap;gap:8px}
+.btn.sm{height:32px;padding:0 12px;font-size:13px}
+.llist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.lrow{display:grid;grid-template-columns:12px auto minmax(0,1fr) 32px;gap:4px 10px;align-items:center;padding:4px 4px 4px 10px;border:1px solid var(--line);border-radius:8px;background:var(--field)}
+.lrow.bad{border-color:var(--danger)}
+.sw{width:12px;height:12px;border-radius:50%}
+.lterm{font:500 14px var(--font-mono)}
+.lcells{font-size:12px;color:var(--muted);min-width:0}
+.lw{color:var(--x-fg);font-weight:600}
+.lx{width:32px;height:32px;border:0;background:transparent;color:var(--muted);font:500 18px var(--font-mono);cursor:pointer;border-radius:6px}
+.lx:hover{background:var(--head);color:var(--danger)}
+.lexpr{font:500 14px/1.7 var(--font-mono);padding:8px 10px;border-radius:8px;background:var(--head);overflow-wrap:anywhere}
+.ov{display:inline-block;border-top:1.5px solid currentColor;line-height:1.15;padding-top:1px;margin-inline:1px}
+.lmsg{padding:8px 10px;border-radius:8px;font-size:13px;display:flex;flex-direction:column;gap:4px}
+.lmsg:empty{display:none}
+.lmsg p{margin:0}
+.lmsg.ok{background:var(--ok-bg);color:var(--ok-fg)}
+.lmsg.warn{background:var(--x-bg);color:var(--x-fg)}
+.lmsg.err{background:var(--bad-bg);color:var(--bad-fg)}
+.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.xbuild{display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px solid var(--line)}
+.xpad{display:flex;flex-wrap:wrap;gap:6px}
+.xpad .btn{min-width:42px;justify-content:center;padding:0 10px;font-family:var(--font-mono)}
+.xpad .sep{width:8px}
+.lexpr .ph{color:var(--muted)}
+.xl{overflow-x:auto;white-space:nowrap;padding-top:14px}
+.ovg{display:inline-block;border-top:1.6px solid currentColor;padding:4px 3px 0;margin-inline:3px;line-height:1.2}
+.tk{cursor:pointer;border-radius:3px}
+.tk:hover{background:var(--one-bg)}
+.tk.hd{white-space:pre}
+.nd.sel{background:var(--one-bg);border-radius:4px;box-shadow:0 0 0 2px var(--one-bg)}
+.tk.sel,.ovg.sel{background:var(--one-bg);outline:2px solid var(--accent);border-radius:3px}
+.ovg[data-p],.tk[data-p]{cursor:pointer}
+.rule{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.rule .hintf{font:12.5px var(--font-mono);color:var(--muted)}
+.rules{display:flex;flex-direction:column;gap:6px}
+.tk.op{margin-inline:.35em}
+.caret{display:inline-block;width:2px;height:1.15em;margin-inline:1px;background:var(--accent);vertical-align:text-bottom}
+.astep{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
+.astep.act{border-color:var(--accent)}
+.astep .lexpr{cursor:pointer}
+.ahead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.ahead .lx{margin-left:auto}
+.alaw{height:32px;max-width:100%;border:1px solid var(--line-strong);border-radius:8px;background:var(--field);color:var(--ink);font:13px var(--font-ui);padding:0 8px}
+.fieldrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.kmap .ksr{display:none;fill:var(--accent);fill-opacity:.14;stroke:var(--accent);stroke-width:2;stroke-dasharray:5 3;pointer-events:none}
+.kmap .kcell.sel .ksr{display:block}
+.kmap .kl-fill{fill-opacity:.14;stroke:none}
+.kmap .kl-line{fill:none;stroke-width:2.8;stroke-linecap:round}
+
+.overlay{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:16px;background:var(--scrim)}
+.sheet{
+  width:min(960px,100%);max-height:100%;display:flex;flex-direction:column;gap:12px;
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;
+}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sheet-head h2{font-size:16px;font-weight:600}
+.preview{overflow:auto;min-height:0;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.preview img{display:block;width:100%;height:auto}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.status{min-height:1.4em;font-size:13px;color:var(--muted)}
+
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;
+  display:flex;align-items:center;gap:14px;max-width:calc(100% - 32px);
+  background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:13.5px;
+}
+.toast button{background:none;border:0;color:inherit;font:inherit;font-weight:600;text-decoration:underline;cursor:pointer;padding:0}
+
+@media (max-width:520px){
+  .panel{padding:12px}
+  .bar{padding:8px 12px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .caret{animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .btn{transition:background-color .12s}
+}
+.work{display:grid;gap:16px;align-items:start;grid-template-columns:minmax(0,1fr)}
+.work.withlaws{grid-template-columns:minmax(0,1fr) 340px}
+.laws{position:sticky;top:76px;max-height:calc(100vh - 92px);overflow:auto;display:flex;flex-direction:column;gap:10px}
+.laws h2{font-size:15px;font-weight:600}
+.laws .lg{display:flex;flex-direction:column;gap:3px;padding-top:8px;border-top:1px solid var(--line)}
+.laws .ln{font-weight:600;font-size:13px}
+.laws .lf{font:500 13.5px/2 var(--font-mono);padding-top:6px}
+.laws .lf .ovg{padding-top:2px}
+.laws .lt{font-size:12.5px;color:var(--muted)}
+.laws .lc{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bar .bt{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:900px){
+  .work.withlaws{grid-template-columns:minmax(0,1fr)}
+  .laws{position:fixed;left:8px;right:8px;bottom:8px;top:auto;max-height:55vh;z-index:7;box-shadow:0 8px 28px rgba(0,0,0,.35)}
+}
+</style>
+
+<div class="wrap">
+  <header class="bar">
+    <div>
+      <h1>Karnaughovy mapy</h1>
+      <p class="sub">Základy digitálních systémů</p>
+    </div>
+    <div class="bt">
+    <button type="button" class="btn" id="lawBtn" aria-pressed="false" aria-controls="laws">Zákony</button>
+    <button type="button" class="btn primary" id="shotBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      Vyfotit mapy
+    </button>
+    </div>
+  </header>
+
+  <section class="panel settings" aria-label="Nastavení map">
+    <div class="field">
+      <span class="label" id="lblVars">Počet proměnných</span>
+      <div class="seg" role="radiogroup" aria-labelledby="lblVars">
+        <input type="radio" name="nv" id="nv2" value="2"><label for="nv2">2</label>
+        <input type="radio" name="nv" id="nv3" value="3"><label for="nv3">3</label>
+        <input type="radio" name="nv" id="nv4" value="4"><label for="nv4">4</label>
+        <input type="radio" name="nv" id="nv5" value="5"><label for="nv5">5</label>
+      </div>
+    </div>
+    <div class="field">
+      <span class="label" id="lblFn">Počet funkcí</span>
+      <div class="step" role="group" aria-labelledby="lblFn">
+        <button type="button" id="fMinus" aria-label="Ubrat funkci">−</button>
+        <output id="fCount" aria-live="polite">2</output>
+        <button type="button" id="fPlus" aria-label="Přidat funkci">+</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="label" id="lblSym">Značka jedničky</span>
+      <div class="seg" role="radiogroup" aria-labelledby="lblSym">
+        <input type="radio" name="sym" id="sym1" value="1"><label for="sym1">1</label>
+        <input type="radio" name="sym" id="symI" value="I"><label for="symI">I</label>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel intro" aria-label="Jak mapa funguje">
+    <div class="panel-head">
+      <span class="label">Mapy</span>
+      <div class="btns">
+        <button type="button" class="btn quiet" id="exBtn">Načíst ukázku</button>
+        <button type="button" class="btn quiet" id="clearBtn">Vymazat hodnoty</button>
+      </div>
+    </div>
+    <p class="hint">Čára u okraje mapy označuje pole, kde se příslušná proměnná rovná 1. Menší číslo v rohu pole je jeho index. Klikni do pole a hodnota se přepne 0 → 1 → X, nebo piš 0, 1 (případně I) a X a šipkami se pohybuj. Záložky <b>Součet (1)</b> a <b>Součin (0)</b> nad mapou slouží ke kreslení smyček při minimalizaci.</p>
+    <p class="exnote" id="exNote">Ukázka ze slidů 45 a 46 (Př. 1.5 a 1.6). Přepiš ji funkcemi ze zadání.</p>
+  </section>
+
+  <div class="work" id="work">
+  <div class="maps" id="kmaps"></div>
+  <aside class="panel laws" id="laws" aria-label="Zákony Booleovy algebry" hidden></aside>
+  </div>
+</div>
+
+<div class="overlay" id="shot" role="dialog" aria-modal="true" aria-labelledby="shotTitle" hidden>
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2 id="shotTitle">Fotka map</h2>
+      <button type="button" class="btn quiet" id="shotClose">Zavřít</button>
+    </div>
+    <div class="preview"><img id="shotImg" alt="Náhled Karnaughových map"></div>
+    <p class="hint" id="shotHelp">Soubor se uloží sám (může se ještě ukázat potvrzení). Obrázek můžeš také zkopírovat a vložit do chatu přes Ctrl+V.</p>
+    <div class="actions">
+      <button type="button" class="btn primary" id="copyBtn">Zkopírovat obrázek</button>
+      <button type="button" class="btn" id="saveBtn">Uložit PNG</button>
+    </div>
+    <p class="status" id="shotStatus" role="status"></p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden>
+  <span id="toastMsg"></span>
+  <button type="button" id="toastAct"></button>
+</div>
+
+<script>
+(function(){
+  var MAXF=8, MAXR=32, KEY='karnaughovy-mapy-v1', C=56, BAR=13;
+  var DEF_F=['f1','f2','f3','f4','f5','f6','f7','f8'];
+  var $=function(id){return document.getElementById(id);};
+  var esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+  function htmlSub(s){return esc(s).replace(/([A-Za-z])(\d+)/g,'$1<sub>$2</sub>');}
+  function subSVG(s){
+    var cnt=0;
+    var out=esc(s).replace(/([A-Za-z])(\d+)/g,function(m,a,b){cnt++;return a+'<tspan dy="3.5" font-size="70%">'+b+'</tspan><tspan dy="-3.5">';});
+    for(var i=0;i<cnt;i++)out+='</tspan>';
+    return out;
+  }
+
+  /* ---------- layout of the maps (slides 50-52) ---------- */
+  var GRAYV=[0,1,3,2];
+  function buildLayout(n){
+    var cols,rows,top,left,r,c;
+    if(n===2){
+      cols=[{x1:0},{x1:1}];rows=[{x0:0},{x0:1}];top=['x1'];left=['x0'];
+    }else if(n===3){
+      cols=GRAYV.map(function(v){return {x1:v&1,x2:v>>1};});rows=[{x0:0},{x0:1}];top=['x1','x2'];left=['x0'];
+    }else{
+      rows=GRAYV.map(function(v){return {x0:v&1,x3:v>>1};});
+      var lb=GRAYV.map(function(v){return {x1:v&1,x2:v>>1,x4:0};});
+      if(n===4){cols=lb;top=['x1','x2'];}
+      else{
+        cols=lb.concat([2,3,1,0].map(function(v){return {x1:v&1,x2:v>>1,x4:1};}));
+        top=['x1','x2','x4'];
+      }
+      left=['x0','x3'];
+    }
+    var index=[];
+    for(r=0;r<rows.length;r++){
+      index.push([]);
+      for(c=0;c<cols.length;c++){
+        index[r].push((rows[r].x0||0)+2*(cols[c].x1||0)+4*(cols[c].x2||0)+8*(rows[r].x3||0)+16*(cols[c].x4||0));
+      }
+    }
+    return {cols:cols,rows:rows,top:top,left:left,index:index};
+  }
+  var LAYOUT={2:buildLayout(2),3:buildLayout(3),4:buildLayout(4),5:buildLayout(5)};
+  function geom(n){
+    var lb=n>=4?2:1,tb=n===2?1:(n===5?3:2);
+    var cols=n===2?2:(n===5?8:4),rows=n>=4?4:2;
+    var leftM=lb*BAR+34,topM=tb*BAR+26;
+    return {cols:cols,rows:rows,leftM:leftM,topM:topM,w:leftM+cols*C+6,h:topM+rows*C+6};
+  }
+  function runsOf(list,key){
+    var out=[],st=-1;
+    for(var i=0;i<=list.length;i++){
+      var on=i<list.length&&list[i][key]===1;
+      if(on&&st<0)st=i;
+      if(!on&&st>=0){out.push([st,i-1]);st=-1;}
+    }
+    return out;
+  }
+
+  /* ---------- state ---------- */
+  function emptyVals(){var a=[];for(var f=0;f<MAXF;f++)a.push(new Array(MAXR).fill(0));return a;}
+  function fromMD(m,d){var a=new Array(MAXR).fill(0);m.forEach(function(i){a[i]=1;});d.forEach(function(i){if(a[i]!==1)a[i]=2;});return a;}
+  var TOKRE=/^(!?x\d+|[*+()01]|N\()$/;
+  var LAWS=['zákon dvojí negace','De Morganův zákon','distributivní zákon (vytýkání)','zákon absorpce','zákon absorpce negace','zákon spojení','absorpce konsenzu','idempotence','komplementarita','neutralita 0 a 1','agresivita 0 a 1','komutativní zákon','asociativní zákon'];
+  function emptyAlg(){var a=[];for(var f=0;f<MAXF;f++)a.push({nand:{base:'dnf',target:'nand',steps:[]},nor:{base:'knf',target:'nor',steps:[]}});return a;}
+  function emptyLoops(){var a=[];for(var f=0;f<MAXF;f++)a.push({dnf:[],knf:[]});return a;}
+  function emptyExpr(){var a=[];for(var f=0;f<MAXF;f++)a.push({dnf:[],knf:[]});return a;}
+  function emptyTabs(){return new Array(MAXF).fill('map');}
+  function normState(s){
+    var ok=Array.isArray(s.loops)&&s.loops.length>=MAXF,f;
+    for(f=0;ok&&f<MAXF;f++){
+      var L=s.loops[f];
+      ok=!!L&&Array.isArray(L.dnf)&&Array.isArray(L.knf)&&L.dnf.concat(L.knf).every(function(a){return Array.isArray(a)&&a.every(function(i){return Number.isInteger(i)&&i>=0&&i<32;});});
+    }
+    if(!ok)s.loops=emptyLoops();
+    var okE=Array.isArray(s.expr)&&s.expr.length>=MAXF;
+    for(f=0;okE&&f<MAXF;f++){
+      var E=s.expr[f];
+      okE=!!E&&Array.isArray(E.dnf)&&Array.isArray(E.knf)&&E.dnf.concat(E.knf).every(function(t){return typeof t==='string'&&TOKRE.test(t);})&&E.dnf.length<200&&E.knf.length<200;
+    }
+    if(!okE)s.expr=emptyExpr();
+    if(Array.isArray(s.alg)){
+      if(Array.isArray(s.tab))s.tab=s.tab.map(function(t,i){if(t!=='alg')return t;var A0=s.alg[i];return A0&&A0.base==='knf'?'nor':'nand';});
+      s.alg=s.alg.map(function(A0){
+        if(A0&&Array.isArray(A0.steps)&&!A0.nand){
+          var nn={base:'dnf',target:'nand',steps:[]},rr={base:'knf',target:'nor',steps:[]};
+          (A0.base==='knf'?rr:nn).steps=A0.steps;return {nand:nn,nor:rr};
+        }
+        return A0;
+      });
+    }
+    var stepsOk=function(T,b,t){
+      return !!T&&T.base===b&&T.target===t&&Array.isArray(T.steps)&&T.steps.length<=12
+        &&T.steps.every(function(st){return st&&Array.isArray(st.toks)&&st.toks.length<=160&&st.toks.every(function(t2){return typeof t2==='string'&&TOKRE.test(t2);})&&typeof st.law==='string'&&(st.law===''||LAWS.indexOf(st.law)>=0);});
+    };
+    var okA=Array.isArray(s.alg)&&s.alg.length>=MAXF;
+    for(f=0;okA&&f<MAXF;f++){var A=s.alg[f];okA=!!A&&stepsOk(A.nand,'dnf','nand')&&stepsOk(A.nor,'knf','nor');}
+    if(!okA)s.alg=emptyAlg();
+    if(!(Array.isArray(s.tab)&&s.tab.length>=MAXF&&s.tab.every(function(t){return t==='map'||t==='dnf'||t==='knf'||t==='nand'||t==='nor';})))s.tab=emptyTabs();
+    return s;
+  }
+  function defaultState(){
+    var vals=emptyVals();
+    vals[0]=fromMD([1,3,4,5,6],[]);
+    vals[1]=fromMD([3,5,6],[1,4]);
+    return {n:3,fcount:2,fnames:DEF_F.slice(),vals:vals,sym:'1',example:true,loops:emptyLoops(),expr:emptyExpr(),alg:emptyAlg(),tab:emptyTabs()};
+  }
+  function validState(s){
+    if(!s||typeof s!=='object')return false;
+    if(!(s.n>=2&&s.n<=5)||!(s.fcount>=1&&s.fcount<=MAXF))return false;
+    if(s.sym!=='1'&&s.sym!=='I')return false;
+    if(!Array.isArray(s.fnames)||s.fnames.length<MAXF)return false;
+    if(!Array.isArray(s.vals)||s.vals.length<MAXF)return false;
+    for(var f=0;f<MAXF;f++){var a=s.vals[f];if(!Array.isArray(a)||a.length<MAXR)return false;for(var r=0;r<MAXR;r++){if(a[r]!==0&&a[r]!==1&&a[r]!==2)return false;}}
+    return true;
+  }
+  function loadState(){
+    try{var raw=localStorage.getItem(KEY);if(raw){var s=JSON.parse(raw);if(validState(s))return normState(s);}}catch(e){}
+    return defaultState();
+  }
+  var saveTimer=null;
+  function save(){
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(function(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}},200);
+  }
+  var state=loadState();
+  var cellOf=[],sel=[],msgs=[],xmsgs=[],neg=[],amsgs=[],algAct=[],caret=[],selp=[],amode=[];
+  var lastBlob=null,downloads=null,opener=null;
+  var size=function(){return 1<<state.n;};
+  var symOf=function(v){return v===0?'0':v===1?state.sym:'X';};
+  var dashed=function(arr){return arr.length?arr.join(','):'–';};
+  function varsList(){var a=[];for(var i=state.n-1;i>=0;i--)a.push('x'+i);return a.join(', ');}
+
+  /* ---------- lists and notation (slides 45-46) ---------- */
+  function listsOf(f){
+    var m=[],d=[],z=[],sz=size();
+    for(var i=0;i<sz;i++){var v=state.vals[f][i];(v===1?m:v===2?d:z).push(i);}
+    return {m:m,d:d,z:z};
+  }
+  function notation(f){
+    var L=listsOf(f),head=state.fnames[f]+'('+varsList()+')';
+    var dd=L.d.length?'('+L.d.join(',')+')':'';
+    return {
+      disj:head+' = D('+dashed(L.m)+dd+') = Σ m('+dashed(L.m)+')'+(L.d.length?' + Σ d('+L.d.join(',')+')':''),
+      conj:head+' = K('+dashed(L.z)+dd+') = Π M('+dashed(L.z)+')'+(L.d.length?'·Π D('+L.d.join(',')+')':'')
+    };
+  }
+  function parseList(str,sz){
+    var out=new Set(),bad=[],tokens=str.split(/[\s,;]+/).filter(Boolean);
+    tokens.forEach(function(t){
+      var range=t.match(/^(\d+)[-–](\d+)$/);
+      if(/^\d+$/.test(t)){var k=+t;if(k<sz)out.add(k);else bad.push(t);}
+      else if(range){
+        var a=+range[1],b=+range[2],tmp;
+        if(a>b){tmp=a;a=b;b=tmp;}
+        if(b>=sz)bad.push(t);else for(var i=a;i<=b;i++)out.add(i);
+      }else bad.push(t);
+    });
+    return {set:out,bad:bad};
+  }
+
+  /* ---------- drawing one map (shared by the page and the photo) ---------- */
+  function mapInner(f,opt){
+    var n=state.n,G=geom(n),Lo=LAYOUT[n],s='',r,c,name=state.fnames[f],page=!(opt&&opt.hex);
+    s+='<text class="kname" x="4" y="17">'+subSVG(name)+(opt&&opt.suffix?'<tspan class="ksuf" dx="8">'+esc(opt.suffix)+'</tspan>':'')+'</text>';
+    s+='<line class="kslash" x1="'+(G.leftM-18)+'" y1="'+(G.topM-18)+'" x2="'+(G.leftM-5)+'" y2="'+(G.topM-5)+'"/>';
+    for(r=0;r<G.rows;r++){
+      for(c=0;c<G.cols;c++){
+        var i=Lo.index[r][c],v=state.vals[f][i],x=G.leftM+c*C,y=G.topM+r*C;
+        s+='<g class="kcell" tabindex="0" role="button" data-f="'+f+'" data-i="'+i+'" data-r="'+r+'" data-c="'+c+'" aria-label="'+esc(name)+', index '+i+': '+(v===2?'neurčeno':v)+'">'
+          +'<rect class="kr kc'+v+'" x="'+x+'" y="'+y+'" width="'+C+'" height="'+C+'"/>'
+          +(page?'<rect class="ksr" x="'+(x+3)+'" y="'+(y+3)+'" width="'+(C-6)+'" height="'+(C-6)+'" rx="7"/>':'')
+          +'<text class="kv kv'+v+'" x="'+(x+C/2)+'" y="'+(y+C/2+8)+'">'+symOf(v)+'</text>'
+          +'<text class="ki" x="'+(x+C-5)+'" y="'+(y+C-6)+'">'+i+'</text></g>';
+      }
+    }
+    s+='<rect class="kbord" x="'+G.leftM+'" y="'+G.topM+'" width="'+(G.cols*C)+'" height="'+(G.rows*C)+'"/>';
+    if(n===5)s+='<line class="ksep" x1="'+(G.leftM+4*C)+'" y1="'+G.topM+'" x2="'+(G.leftM+4*C)+'" y2="'+(G.topM+G.rows*C)+'"/>';
+    Lo.top.forEach(function(vn,level){
+      runsOf(Lo.cols,vn).forEach(function(rn){
+        var y=G.topM-BAR*(level+1),x1=G.leftM+rn[0]*C+2,x2=G.leftM+(rn[1]+1)*C-2;
+        s+='<line class="kbar" x1="'+x1+'" y1="'+y+'" x2="'+x2+'" y2="'+y+'"/>';
+        s+='<text class="klab" x="'+(x1-6)+'" y="'+(y+4.5)+'" text-anchor="end">'+subSVG(vn)+'</text>';
+      });
+    });
+    Lo.left.forEach(function(vn,level){
+      runsOf(Lo.rows,vn).forEach(function(rn){
+        var x=G.leftM-BAR*(level+1),y1=G.topM+rn[0]*C+2,y2=G.topM+(rn[1]+1)*C-2;
+        s+='<line class="kbar" x1="'+x+'" y1="'+y1+'" x2="'+x+'" y2="'+y2+'"/>';
+        s+='<text class="klab" x="'+(x-5)+'" y="'+(y1+12)+'" text-anchor="end">'+subSVG(vn)+'</text>';
+      });
+    });
+    var lp='';
+    if(opt&&opt.loops)opt.loops.forEach(function(L){lp+=loopMarkup(L.cells,L.k,opt.hex?LCOL_HEX[L.k%6]:'var(--l'+(L.k%6)+')');});
+    s+='<g class="kloops" pointer-events="none">'+lp+'</g>';
+    return s;
+  }
+  function pageOpt(f){return {loops:drawLoops(f)};}
+  function exportOpt(f,mode){return {hex:true,loops:mode?validLoops(f,mode):[],suffix:mode==='dnf'?'součet':(mode==='knf'?'součin':'')};}
+  function exportModes(f){
+    var out=[];
+    ['dnf','knf'].forEach(function(m){if(validLoops(f,m).length||state.expr[f][m].length)out.push(m);});
+    return out.length?['dnf','knf']:[null];
+  }
+  function mapSVG(f){
+    var G=geom(state.n);
+    return '<svg viewBox="0 0 '+G.w+' '+G.h+'" style="max-width:'+G.w+'px" role="group" aria-label="Karnaughova mapa funkce '+esc(state.fnames[f])+'">'+mapInner(f,pageOpt(f))+'</svg>';
+  }
+
+  /* ---------- loops: validity, terms, minimal solution (slides 8-12) ---------- */
+  var LCOL_HEX=['#C8341C','#1C8A4A','#8A3DC2','#C17400','#0B87A3','#C0307A'];
+  var numSort=function(a,b){return a-b;};
+  function popc(x){var c=0;while(x){c+=x&1;x>>=1;}return c;}
+  function allowedOf(f,mode){
+    var sz=size(),al=[],tg=[],i,v;
+    for(i=0;i<sz;i++){v=state.vals[f][i];tg[i]=mode==='dnf'?v===1:v===0;al[i]=tg[i]||v===2;}
+    return {al:al,tg:tg};
+  }
+  function cubeCells(mask,val){var out=[],sz=size();for(var i=0;i<sz;i++)if((i&mask)===val)out.push(i);return out;}
+  function allIn(cells,al){for(var k=0;k<cells.length;k++)if(!al[cells[k]])return false;return true;}
+  function cubeInfo(cells){
+    var m=cells.length;
+    if(!m)return {ok:false,why:'empty'};
+    if(m&(m-1))return {ok:false,why:'size'};
+    var a=cells[0],o=cells[0],k;
+    for(k=0;k<m;k++){a&=cells[k];o|=cells[k];}
+    var diff=o^a;
+    if((1<<popc(diff))!==m)return {ok:false,why:'shape'};
+    var mask=(size()-1)&~diff,val=a&mask;
+    for(k=0;k<m;k++)if((cells[k]&mask)!==val)return {ok:false,why:'shape'};
+    return {ok:true,mask:mask,val:val,lits:popc(mask)};
+  }
+  function extendable(mask,val,al){
+    for(var b=0;b<state.n;b++){
+      if(mask&(1<<b)&&allIn(cubeCells(mask&~(1<<b),val&~(1<<b)),al))return true;
+    }
+    return false;
+  }
+  function loopState(f,mode,cells){
+    var info=cubeInfo(cells),A=allowedOf(f,mode);
+    if(!info.ok)return {valid:false,why:info.why};
+    if(!allIn(cells,A.al))return {valid:false,why:'value'};
+    if(!cells.some(function(i){return A.tg[i];}))return {valid:false,why:'notarget'};
+    return {valid:true,info:info,prime:!extendable(info.mask,info.val,A.al)};
+  }
+  function primesOf(f,mode){
+    var A=allowedOf(f,mode),sz=size(),out=[];
+    for(var mask=0;mask<sz;mask++){
+      var val=mask;
+      for(;;){
+        var cells=cubeCells(mask,val);
+        if(allIn(cells,A.al)&&cells.some(function(i){return A.tg[i];})&&!extendable(mask,val,A.al))
+          out.push({mask:mask,val:val,cells:cells,lits:popc(mask)});
+        if(val===0)break;
+        val=(val-1)&mask;
+      }
+    }
+    return {primes:out,A:A};
+  }
+  function solveMin(f,mode){
+    var P=primesOf(f,mode),T=[],tIdx={},i;
+    for(i=0;i<size();i++)if(P.A.tg[i]){tIdx[i]=T.length;T.push(i);}
+    var pr=P.primes;
+    if(!T.length)return {k:0,lits:0,sols:[[]],primes:pr,targets:T};
+    var cover=T.map(function(t){var l=[];pr.forEach(function(p,j){if(p.cells.indexOf(t)>=0)l.push(j);});return l;});
+    var cov=new Array(T.length).fill(0),found=null,K,budget;
+    function add(pi,d){pr[pi].cells.forEach(function(c){if(tIdx[c]!==undefined)cov[tIdx[c]]+=d;});}
+    for(K=1;K<=Math.min(T.length,pr.length)&&!found;K++){
+      var sols={},cnt=0;budget=400000;
+      (function rec(chosen){
+        if(--budget<0)return;
+        var t=-1,best=1e9,j;
+        for(j=0;j<T.length;j++)if(!cov[j]&&cover[j].length<best){best=cover[j].length;t=j;}
+        if(t<0){sols[chosen.slice().sort(numSort).join(',')]=chosen.slice();return;}
+        if(chosen.length>=K)return;
+        cover[t].forEach(function(pi){chosen.push(pi);add(pi,1);rec(chosen);add(pi,-1);chosen.pop();});
+      })([]);
+      var keys=Object.keys(sols);
+      if(keys.length)found={K:K,list:keys.map(function(k){return sols[k];})};
+    }
+    var costOf=function(sol){return sol.reduce(function(a,pi){return a+pr[pi].lits;},0);};
+    var minC=Math.min.apply(null,found.list.map(costOf));
+    var best=found.list.filter(function(sol){return costOf(sol)===minC;}).map(function(sol){
+      return sol.slice().sort(function(a,b){return pr[a].cells[0]-pr[b].cells[0]||a-b;});
+    });
+    best.sort(function(a,b){return a.join(',')<b.join(',')?-1:1;});
+    return {k:found.K,lits:minC,sols:best,primes:pr,targets:T};
+  }
+
+  /* terms (slides 9-10): DNF = product of literals (1 -> direct, 0 -> negated); KNF = sum (0 -> direct, 1 -> negated) */
+  function litsOf(mask,val,mode){
+    var out=[];
+    for(var b=state.n-1;b>=0;b--){
+      if(mask&(1<<b)){var bit=(val>>b)&1;out.push({b:b,neg:mode==='dnf'?bit===0:bit===1});}
+    }
+    return out;
+  }
+  function validLoops(f,mode){
+    var out=[];
+    state.loops[f][mode].forEach(function(cells,k){var st=loopState(f,mode,cells);if(st.valid)out.push({cells:cells,k:k,st:st});});
+    return out;
+  }
+  function validTerms(f,mode){return validLoops(f,mode).map(function(L){return litsOf(L.st.info.mask,L.st.info.val,mode);});}
+  function isLoopTab(f){return state.tab[f]==='dnf'||state.tab[f]==='knf';}
+  function drawLoops(f){return isLoopTab(f)?validLoops(f,state.tab[f]):[];}
+  function litHTML(l){var t='x<sub>'+l.b+'</sub>';return l.neg?'<span class="ov">'+t+'</span>':t;}
+  function termHTML(t,mode){
+    if(!t.length)return mode==='dnf'?'1':'0';
+    var j=t.map(litHTML).join(mode==='dnf'?'·':' + ');
+    return mode==='knf'&&t.length>1?'('+j+')':j;
+  }
+  function exprHTML(f,mode){
+    var ts=validTerms(f,mode),head=htmlSub(state.fnames[f])+' = ';
+    if(!ts.length)return head+'…';
+    return head+ts.map(function(t){return termHTML(t,mode);}).join(mode==='dnf'?' + ':'·');
+  }
+  function termPlain(t,mode){
+    if(!t.length)return mode==='dnf'?'1':'0';
+    var j=t.map(function(l){return (l.neg?'!':'')+'x'+l.b;}).join(mode==='dnf'?'*':'+');
+    return mode==='knf'&&t.length>1?'('+j+')':j;
+  }
+  function exprPlain(f,mode){return validTerms(f,mode).map(function(t){return termPlain(t,mode);}).join(mode==='dnf'?' + ':'*');}
+
+  /* drawing a loop on the map; sides that continue over the edge of the map are left open */
+  function runsFromSet(set){
+    var a=Array.from(set).sort(numSort),out=[],st=a[0],prev=a[0];
+    for(var i=1;i<=a.length;i++){
+      if(i<a.length&&a[i]===prev+1){prev=a[i];continue;}
+      out.push([st,prev]);
+      if(i<a.length){st=a[i];prev=a[i];}
+    }
+    return out;
+  }
+  function loopMarkup(cells,k,col){
+    var n=state.n,G=geom(n),Lo=LAYOUT[n],pos={},r,c,s='';
+    for(r=0;r<G.rows;r++)for(c=0;c<G.cols;c++)pos[Lo.index[r][c]]=[r,c];
+    var rs=new Set(),cs=new Set();
+    cells.forEach(function(i){rs.add(pos[i][0]);cs.add(pos[i][1]);});
+    var wrapC=cs.size<G.cols,wrapR=rs.size<G.rows,d=4+(k%3)*2.5;
+    runsFromSet(rs).forEach(function(ra){runsFromSet(cs).forEach(function(ca){
+      var L=wrapC&&ca[0]===0&&cs.has(G.cols-1),R=wrapC&&ca[1]===G.cols-1&&cs.has(0),
+          T=wrapR&&ra[0]===0&&rs.has(G.rows-1),B=wrapR&&ra[1]===G.rows-1&&rs.has(0);
+      var X0=G.leftM+ca[0]*C,X1=G.leftM+(ca[1]+1)*C,Y0=G.topM+ra[0]*C,Y1=G.topM+(ra[1]+1)*C;
+      var ix0=X0+d,ix1=X1-d,iy0=Y0+d,iy1=Y1-d,rad=Math.min(11,(ix1-ix0)/2,(iy1-iy0)/2),p='';
+      var fx=L?X0:ix0,fy=T?Y0:iy0,fw=(R?X1:ix1)-fx,fh=(B?Y1:iy1)-fy;
+      s+='<rect class="kl-fill" style="fill:'+col+'" x="'+fx+'" y="'+fy+'" width="'+fw+'" height="'+fh+'" rx="'+rad+'"/>';
+      if(!T)p+='M'+(L?X0:ix0+rad)+' '+iy0+'L'+(R?X1:ix1-rad)+' '+iy0;
+      if(!B)p+='M'+(L?X0:ix0+rad)+' '+iy1+'L'+(R?X1:ix1-rad)+' '+iy1;
+      if(!L)p+='M'+ix0+' '+(T?Y0:iy0+rad)+'L'+ix0+' '+(B?Y1:iy1-rad);
+      if(!R)p+='M'+ix1+' '+(T?Y0:iy0+rad)+'L'+ix1+' '+(B?Y1:iy1-rad);
+      if(!T&&!L)p+='M'+ix0+' '+(iy0+rad)+'A'+rad+' '+rad+' 0 0 1 '+(ix0+rad)+' '+iy0;
+      if(!T&&!R)p+='M'+(ix1-rad)+' '+iy0+'A'+rad+' '+rad+' 0 0 1 '+ix1+' '+(iy0+rad);
+      if(!B&&!R)p+='M'+ix1+' '+(iy1-rad)+'A'+rad+' '+rad+' 0 0 1 '+(ix1-rad)+' '+iy1;
+      if(!B&&!L)p+='M'+(ix0+rad)+' '+iy1+'A'+rad+' '+rad+' 0 0 1 '+ix0+' '+(iy1-rad);
+      s+='<path class="kl-line" style="stroke:'+col+'" d="'+p+'"/>';
+    });});
+    return s;
+  }
+
+  /* ---------- page: cards ---------- */
+  function paintKCell(g,f,i){
+    var v=state.vals[f][i];
+    g.querySelector('rect').setAttribute('class','kr kc'+v);
+    var t=g.querySelector('.kv');
+    t.setAttribute('class','kv kv'+v);
+    t.textContent=symOf(v);
+    g.setAttribute('aria-label',state.fnames[f]+', index '+i+': '+(v===2?'neurčeno':v));
+  }
+  function renderMap(f){
+    var box=$('km-'+f);
+    box.innerHTML=mapSVG(f);
+    cellOf[f]=[];
+    var cells=box.querySelectorAll('.kcell');
+    for(var k=0;k<cells.length;k++)cellOf[f][+cells[k].dataset.i]=cells[k];
+    if(sel[f])sel[f].forEach(function(i){if(cellOf[f][i])cellOf[f][i].classList.add('sel');});
+  }
+  function syncCard(f,keepInputs){
+    var L=listsOf(f);
+    if(!keepInputs){
+      var mi=$('km-m-'+f),di=$('km-d-'+f);
+      if(mi){mi.value=L.m.join(', ');mi.setAttribute('aria-invalid','false');}
+      if(di){di.value=L.d.join(', ');di.setAttribute('aria-invalid','false');}
+      var er=$('ke-'+f);if(er)er.textContent='';
+    }
+    var N=notation(f);
+    if($('kd-'+f))$('kd-'+f).innerHTML=htmlSub(N.disj);
+    if($('kk-'+f))$('kk-'+f).innerHTML=htmlSub(N.conj);
+  }
+  function renderCards(){
+    var G=geom(state.n),h='',f;
+    $('kmaps').style.setProperty('--cardw',Math.max(G.w+36,270)+'px');
+    var TABS=[['map','Zadání'],['dnf','Součet (1)'],['knf','Součin (0)'],['nand','NAND'],['nor','NOR']];
+    for(f=0;f<state.fcount;f++){
+      h+='<article class="panel kcard">'
+        +'<div class="khead"><label class="lbl" for="kn-'+f+'"><span>Název funkce</span><input class="name" id="kn-'+f+'" data-f="'+f+'" maxlength="6" value="'+esc(state.fnames[f])+'" autocomplete="off" spellcheck="false"></label></div>'
+        +'<div class="tabs" role="group" aria-label="Režim mapy '+esc(state.fnames[f])+'">'
+        +TABS.map(function(t){return '<button type="button" data-act="tab" data-f="'+f+'" data-tab="'+t[0]+'" aria-pressed="'+(state.tab[f]===t[0])+'">'+t[1]+'</button>';}).join('')
+        +'</div>'
+        +'<div class="kmap" id="km-'+f+'"></div>'
+        +'<div class="lpanel" id="kl-'+f+'" hidden></div>'
+        +'<div class="kin" id="kin-'+f+'"'+(state.tab[f]==='map'?'':' hidden')+'>'
+        +'<div class="row2">'
+        +'<label class="lbl" for="km-m-'+f+'"><span>Jedničky Σ m</span><input class="txt" id="km-m-'+f+'" data-f="'+f+'" placeholder="např. 1, 3, 5–7" autocomplete="off" spellcheck="false"></label>'
+        +'<label class="lbl" for="km-d-'+f+'"><span>Neurčené d</span><input class="txt" id="km-d-'+f+'" data-f="'+f+'" placeholder="např. 0, 15" autocomplete="off" spellcheck="false"></label>'
+        +'</div><div class="err" id="ke-'+f+'"></div></div>'
+        +'<p class="kline" id="kd-'+f+'"></p><p class="kline" id="kk-'+f+'"></p>'
+        +'</article>';
+    }
+    $('kmaps').innerHTML=h;
+    cellOf=[];
+    for(f=0;f<state.fcount;f++){renderMap(f);syncCard(f,false);renderLoopPanel(f);}
+  }
+  function updateNote(){$('exNote').hidden=!state.example;}
+  function setCell(f,i,v){
+    state.vals[f][i]=v;state.example=false;
+    paintKCell(cellOf[f][i],f,i);
+    syncCard(f,false);updateNote();save();
+  }
+
+  var maps=$('kmaps');
+  maps.addEventListener('click',function(e){
+    var b=e.target.closest('[data-act]');
+    if(b){doAct(b);return;}
+    var g=e.target.closest('.kcell');if(!g)return;
+    var f=+g.dataset.f,i=+g.dataset.i;
+    if(state.tab[f]!=='map'){if(isLoopTab(f))toggleSel(f,i);return;}
+    setCell(f,i,(state.vals[f][i]+1)%3);
+  });
+  maps.addEventListener('keydown',function(e){
+    var g=e.target.closest&&e.target.closest('.kcell');if(!g||e.ctrlKey||e.metaKey||e.altKey)return;
+    var f=+g.dataset.f,i=+g.dataset.i,k=e.key;
+    if(k==='0'||k==='1'||k==='i'||k==='I'||k==='x'||k==='X'||k==='-'){
+      e.preventDefault();
+      if(state.tab[f]==='map')setCell(f,i,k==='0'?0:(k==='1'||k==='i'||k==='I')?1:2);
+    }else if(k===' '||k==='Enter'){
+      e.preventDefault();
+      if(state.tab[f]==='map')setCell(f,i,(state.vals[f][i]+1)%3);else if(isLoopTab(f))toggleSel(f,i);
+    }else if(k.indexOf('Arrow')===0){
+      e.preventDefault();
+      var G=geom(state.n),r=+g.dataset.r,c=+g.dataset.c;
+      if(k==='ArrowDown')r=Math.min(r+1,G.rows-1);
+      if(k==='ArrowUp')r=Math.max(r-1,0);
+      if(k==='ArrowRight')c=Math.min(c+1,G.cols-1);
+      if(k==='ArrowLeft')c=Math.max(c-1,0);
+      var nx=$('km-'+f).querySelector('.kcell[data-r="'+r+'"][data-c="'+c+'"]');
+      if(nx)nx.focus();
+    }
+  });
+  maps.addEventListener('input',function(e){
+    var el=e.target;if(!el.dataset||el.dataset.f===undefined)return;
+    var f=+el.dataset.f,sz=size();
+    if(el.classList.contains('name')){
+      state.fnames[f]=el.value.trim()||DEF_F[f];
+      renderMap(f);syncCard(f,true);save();
+      return;
+    }
+    var pm=parseList($('km-m-'+f).value,sz),pd=parseList($('km-d-'+f).value,sz);
+    for(var i=0;i<sz;i++){
+      state.vals[f][i]=pm.set.has(i)?1:pd.set.has(i)?2:0;
+      paintKCell(cellOf[f][i],f,i);
+    }
+    $('km-m-'+f).setAttribute('aria-invalid',pm.bad.length?'true':'false');
+    $('km-d-'+f).setAttribute('aria-invalid',pd.bad.length?'true':'false');
+    var bad=pm.bad.concat(pd.bad);
+    $('ke-'+f).textContent=bad.length?('Nerozumím: '+bad.join(', ')+'. Indexy jsou 0 až '+(sz-1)+'.'):'';
+    state.example=false;
+    syncCard(f,true);updateNote();save();
+  });
+  maps.addEventListener('change',function(e){
+    var el=e.target;if(!el.dataset||el.dataset.f===undefined||el.classList.contains('name'))return;
+    if(el.classList.contains('alaw')){algOf(+el.dataset.f).steps[+el.dataset.s].law=el.value;save();return;}
+    var f=+el.dataset.f;
+    if(!$('ke-'+f).textContent)syncCard(f,false);
+  });
+
+  function setMsg(f,t,lines){msgs[f]={t:t,lines:lines};}
+  function msgHTML(f){
+    var m=msgs[f];if(!m)return '';
+    return m.lines.map(function(l){return '<p>'+l+'</p>';}).join('');
+  }
+  var LITRE=/^(!?)x(\d+)$/;
+  function tokHTML(tk){
+    if(tk==='*')return '·';
+    if(tk==='+')return ' + ';
+    if(tk==='('||tk===')')return tk;
+    var m=LITRE.exec(tk);
+    return litHTML({b:+m[2],neg:!!m[1]});
+  }
+  function renderLoopPanel(f){
+    var box=$('kl-'+f),tab=state.tab[f];
+    if(!box)return;
+    var kin=$('kin-'+f);if(kin)kin.hidden=tab!=='map';
+    box.hidden=tab==='map';
+    if(tab==='map'){box.innerHTML='';return;}
+    if(tab==='nand'||tab==='nor'){renderAlgPanel(f,box);return;}
+    var mode=tab,one=mode==='dnf',loops=state.loops[f][mode],toks=state.expr[f][mode],armed=!!neg[f],h='',b;
+    h+='<p class="hint">'+(one
+      ?'<b>Součtový tvar.</b> Obkresli co největší smyčky kolem <b>jedniček</b> (X využij, když pomůže). Klikni na pole jedné smyčky a dej Přidat. Smyčka má 1, 2, 4, 8… polí a smí jít přes okraj mapy.'
+      :'<b>Součinový tvar.</b> Obkresli co největší smyčky kolem <b>nul</b> (X využij, když pomůže). Klikni na pole jedné smyčky a dej Přidat. Smyčka má 1, 2, 4, 8… polí a smí jít přes okraj mapy.')+'</p>';
+    h+='<div class="lactions"><button type="button" class="btn sm primary" data-act="ladd" data-f="'+f+'">Přidat smyčku <span id="kls-'+f+'">('+selSet(f).size+')</span></button>'
+      +'<button type="button" class="btn sm quiet" data-act="lsel" data-f="'+f+'">Zrušit výběr</button></div>';
+    h+='<ul class="llist" aria-label="Smyčky">';
+    loops.forEach(function(cells,k){
+      var st=loopState(f,mode,cells);
+      h+='<li class="lrow'+(st.valid?'':' bad')+'"><span class="sw" style="background:var(--l'+(k%6)+')"></span>'
+        +'<span class="lterm">Smyčka '+(k+1)+'</span>'
+        +'<span class="lcells">pole '+cells.join(', ')+(st.valid?(st.prime?'':' · <span class="lw">jde zvětšit</span>'):' · <span class="lw">už neplatí</span>')+'</span>'
+        +'<button type="button" class="lx" data-act="ldel" data-f="'+f+'" data-k="'+k+'" aria-label="Smazat smyčku '+(k+1)+'">×</button></li>';
+    });
+    h+='</ul>';
+    h+='<div class="lactions"><button type="button" class="btn sm" data-act="lchk" data-f="'+f+'">Zkontrolovat smyčky</button>'
+      +'<button type="button" class="btn sm quiet" data-act="lshow" data-f="'+f+'">Ukázat smyčky řešení</button>'
+      +(loops.length?'<button type="button" class="btn sm quiet" data-act="lclr" data-f="'+f+'">Smazat smyčky</button>':'')+'</div>';
+    h+='<div class="lmsg'+(msgs[f]?' '+msgs[f].t:'')+'" id="klm-'+f+'" role="status">'+msgHTML(f)+'</div>';
+    /* expression builder */
+    h+='<div class="xbuild"><span class="label">Výraz</span>';
+    h+='<p class="hint">'+(one
+      ?'Z každé smyčky napiš jeden člen (součin proměnných, kde 1 je přímá a 0 negovaná). Členy pak spoj znaménkem +.'
+      :'Z každé smyčky napiš jeden součet v závorce (0 je přímá proměnná, 1 negovaná). Závorky pak spoj znaménkem ·.')+' Chceš-li negovanou proměnnou, nejdřív zapni Negace.</p>';
+    h+='<p class="lexpr" id="kx-'+f+'">'+htmlSub(state.fnames[f])+' = '+(toks.length?toks.map(tokHTML).join(''):'<span class="ph">…</span>')+'</p>';
+    h+='<div class="xpad" role="group" aria-label="Tlačítka pro sestavení výrazu">';
+    h+='<button type="button" class="btn sm" data-act="xneg" data-f="'+f+'" aria-pressed="'+armed+'">Negace</button><span class="sep"></span>';
+    for(b=state.n-1;b>=0;b--)h+='<button type="button" class="btn sm" data-act="xv" data-f="'+f+'" data-v="'+b+'" aria-label="'+(armed?'nenegované x':'x')+b+'">'+(armed?'<span class="ov">x<sub>'+b+'</sub></span>':'x<sub>'+b+'</sub>')+'</button>';
+    h+='<span class="sep"></span><button type="button" class="btn sm" data-act="xop" data-f="'+f+'" data-t="*" aria-label="krát">·</button>'
+      +'<button type="button" class="btn sm" data-act="xop" data-f="'+f+'" data-t="+" aria-label="plus">+</button>';
+    if(!one)h+='<button type="button" class="btn sm" data-act="xop" data-f="'+f+'" data-t="(" aria-label="levá závorka">(</button>'
+      +'<button type="button" class="btn sm" data-act="xop" data-f="'+f+'" data-t=")" aria-label="pravá závorka">)</button>';
+    h+='<span class="sep"></span><button type="button" class="btn sm" data-act="xbs" data-f="'+f+'" aria-label="Smazat poslední znak">⌫</button>'
+      +'<button type="button" class="btn sm quiet" data-act="xclr" data-f="'+f+'">Vymazat výraz</button></div>';
+    h+='<div class="lactions"><button type="button" class="btn sm primary" data-act="xchk" data-f="'+f+'">Zkontrolovat výraz</button></div>';
+    h+='<div class="lmsg'+(xmsgs[f]?' '+xmsgs[f].t:'')+'" id="kxm-'+f+'" role="status">'+(xmsgs[f]?xmsgs[f].lines.map(function(l){return '<p>'+l+'</p>';}).join(''):'')+'</div></div>';
+    box.innerHTML=h;
+  }
+  /* ---------- algebra: general expressions with bars over groups ---------- */
+  function flatKids(list,type){
+    var out=[];
+    list.forEach(function(k){if(k.t===type)k.kids.forEach(function(q){out.push(q);});else out.push(k);});
+    return out;
+  }
+  function parseGen(toks){
+    var i=0,L=toks.length,err=null;
+    var fail=function(m){if(!err)err=m;return null;};
+    var startsFactor=function(t){return LITRE.test(t)||t==='0'||t==='1'||t==='('||t==='N(';};
+    function factor(){
+      if(i>=L)return fail('Výraz je neúplný, chybí poslední část.');
+      var t=toks[i],m;
+      if((m=LITRE.exec(t))){i++;return {t:'lit',b:+m[2],neg:!!m[1]};}
+      if(t==='0'||t==='1'){i++;return {t:'const',v:+t};}
+      if(t==='('||t==='N('){
+        i++;
+        var inner=sum();if(err)return null;
+        if(i>=L)return fail('Chybí zavírací závorka.');
+        if(toks[i]!==')'){return fail(startsFactor(toks[i])?'Mezi dvěma částmi výrazu chybí znaménko (· nebo +).':'Zavírací závorka nesedí.');}
+        i++;
+        return t==='N('?{t:'not',kid:inner}:inner;
+      }
+      if(t===')')return fail('Zavírací závorka bez otevírací, nebo prázdná závorka.');
+      return fail('Znaménko je na špatném místě (na začátku, nebo dvě za sebou).');
+    }
+    function prod(){
+      var kids=[],k=factor();if(err)return null;kids.push(k);
+      while(i<L&&toks[i]==='*'){i++;k=factor();if(err)return null;kids.push(k);}
+      return kids.length===1?kids[0]:{t:'and',kids:flatKids(kids,'and')};
+    }
+    function sum(){
+      var kids=[],k=prod();if(err)return null;kids.push(k);
+      while(i<L&&toks[i]==='+'){i++;k=prod();if(err)return null;kids.push(k);}
+      return kids.length===1?kids[0]:{t:'or',kids:flatKids(kids,'or')};
+    }
+    if(!L)return {err:'Výraz je zatím prázdný.'};
+    var node=sum();
+    if(!err&&i<L)fail(toks[i]===')'?'Zavírací závorka bez otevírací.':'Mezi dvěma částmi výrazu chybí znaménko (· nebo +).');
+    return err?{err:err}:{node:node};
+  }
+  function evalNode(n,r){
+    if(n.t==='lit'){var b=(r>>n.b)&1;return n.neg?1-b:b;}
+    if(n.t==='const')return n.v;
+    if(n.t==='not')return 1-evalNode(n.kid,r);
+    var k;
+    if(n.t==='and'){for(k=0;k<n.kids.length;k++)if(!evalNode(n.kids[k],r))return 0;return 1;}
+    for(k=0;k<n.kids.length;k++)if(evalNode(n.kids[k],r))return 1;
+    return 0;
+  }
+  function vecOf(node){var v=[],sz=size();for(var r=0;r<sz;r++)v.push(evalNode(node,r));return v;}
+  function diffRows(a,b){var out=[];for(var r=0;r<a.length;r++)if(a[r]!==b[r])out.push(r);return out;}
+  function isLitNode(n){return n.t==='lit';}
+  function litsAll(list){return list.every(isLitNode);}
+  /* NAND-NAND: not( and( not(and(lits)) , ... ) );  NOR-NOR: not( or( not(or(lits)) , ... ) ) */
+  function formCheck(node,target){
+    var inner=target==='nand'?'and':'or',nm=target==='nand'?'NAND':'NOR',op=target==='nand'?'součin (·)':'součet (+)';
+    var lines=[],gates=0,negVars={};
+    if(node.t!=='not'){
+      lines.push('Chybí vnější čára: celý výraz má být pod jednou velkou čarou (poslední hradlo '+nm+').');return {lines:lines};
+    }
+    var top=node.kid,kids;
+    if(top.t===inner)kids=top.kids;else if(top.t==='not'||top.t==='lit')kids=[top];else{lines.push('Pod velkou čarou má být '+op+' jednotlivých částí.');return {lines:lines};}
+    gates=1;
+    kids.forEach(function(k,j){
+      var nmk=(target==='nand'?'Člen ':'Součet ')+(j+1);
+      if(k.t==='lit'){if(k.neg)negVars[k.b]=1;return;}
+      if(k.t!=='not'){lines.push(nmk+' (zleva) není pod vlastní čarou. Každá část musí být negovaná, protože je to hradlo '+nm+'.');return;}
+      var q=k.kid;
+      if(q.t==='lit'){gates++;if(q.neg)negVars[q.b]=1;return;}
+      if(q.t===inner&&litsAll(q.kids)){gates++;q.kids.forEach(function(l){if(l.neg)negVars[l.b]=1;});return;}
+      lines.push(nmk+' (zleva): pod čarou má být jen '+(target==='nand'?'součin proměnných':'součet proměnných')+', žádné další závorky.');
+    });
+    return {lines:lines,gates:gates,neg:Object.keys(negVars).map(Number).sort(function(a,b){return b-a;})};
+  }
+  function countToks(toks){
+    var lit=0,ops=0;
+    toks.forEach(function(t){if(LITRE.test(t))lit++;else if(t==='*'||t==='+')ops++;});
+    return {lit:lit,ops:ops};
+  }
+
+  /* HTML for a token list: bars over groups opened by N( and over negated variables */
+  function toksToHTML(toks,caretAt,f,si){
+    var bufs=[''],kinds=[],i,n=toks.length,click=f!==undefined;
+    var add=function(h){bufs[bufs.length-1]+=h;};
+    var attr=function(idx){return click?' data-act="atok" data-f="'+f+'" data-s="'+si+'" data-i="'+idx+'"':'';};
+    var close=function(){
+      var b=bufs.pop(),k=kinds.pop();
+      add(k==='N'?'<span class="ovg">'+b+'</span>':'('+b+')');
+    };
+    for(i=0;i<=n;i++){
+      if(i===caretAt)add('<span class="caret" aria-hidden="true"></span>');
+      if(i===n)break;
+      var t=toks[i];
+      if(t==='N('||t==='('){bufs.push('');kinds.push(t==='N('?'N':'P');}
+      else if(t===')'){if(kinds.length)close();else add('<span class="tk"'+attr(i)+'>)</span>');}
+      else if(t==='*')add('<span class="tk op"'+attr(i)+'>·</span>');
+      else if(t==='+')add('<span class="tk op"'+attr(i)+'>+</span>');
+      else if(t==='0'||t==='1')add('<span class="tk"'+attr(i)+'>'+t+'</span>');
+      else{var m=LITRE.exec(t);add('<span class="tk"'+attr(i)+'>'+litHTML({b:+m[2],neg:!!m[1]})+'</span>');}
+    }
+    while(kinds.length)close();
+    return bufs[0];
+  }
+
+  /* ---------- algebra: rule engine (mechanical rewriting) ---------- */
+  function cl(n){return JSON.parse(JSON.stringify(n));}
+  function keyOf(n){
+    if(n.t==='lit')return (n.neg?'!':'')+'x'+n.b;
+    if(n.t==='const')return ''+n.v;
+    if(n.t==='not')return '~('+keyOf(n.kid)+')';
+    return (n.t==='and'?'&(':'|(')+n.kids.map(keyOf).sort().join(',')+')';
+  }
+  function mk(t,kids){
+    var flat=[];
+    kids.forEach(function(k){if(k.t===t)k.kids.forEach(function(q){flat.push(q);});else flat.push(k);});
+    if(flat.length===1)return flat[0];
+    if(!flat.length)return {t:'const',v:t==='and'?1:0};
+    return {t:t,kids:flat};
+  }
+  function comp(n){
+    if(n.t==='lit')return {t:'lit',b:n.b,neg:!n.neg};
+    if(n.t==='not')return n.kid;
+    if(n.t==='const')return {t:'const',v:1-n.v};
+    return {t:'not',kid:n};
+  }
+  function negK(n){return n.t==='lit'?{t:'lit',b:n.b,neg:!n.neg}:{t:'not',kid:n};}
+  function isCompl(a,b){return keyOf(comp(a))===keyOf(b);}
+  function dualT(t){return t==='or'?'and':'or';}
+  function facs(n,t){return n.t===t?n.kids:[n];}
+  function isAO(n){return n.t==='and'||n.t==='or';}
+  function without(arr,idx){return arr.filter(function(_,i){return i!==idx&&(!idx.length||idx.indexOf(i)<0);});}
+  function dropIdx(arr,set){return arr.filter(function(_,i){return set.indexOf(i)<0;});}
+  function keysOf(a){return a.map(keyOf);}
+  function subsetKeys(A,B){var kb=keysOf(B);return keysOf(A).every(function(k){return kb.indexOf(k)>=0;});}
+  var RULES=[
+   {id:'dn_add',law:'zákon dvojí negace',label:'Dvojí negace: přidat dvě čáry',hint:'A → ¬¬A',
+    fn:function(n){return {t:'not',kid:{t:'not',kid:n}};}},
+   {id:'dn_rem',law:'zákon dvojí negace',label:'Dvojí negace: smazat dvě čáry',hint:'¬¬A → A',
+    fn:function(n){return n.t==='not'&&n.kid.t==='not'?n.kid.kid:null;}},
+   {id:'dm_fwd',law:'De Morganův zákon',label:'De Morgan: rozbít čáru',hint:'¬(A+B) → ¬A·¬B   ¬(A·B) → ¬A+¬B',
+    fn:function(n){return n.t==='not'&&isAO(n.kid)?mk(dualT(n.kid.t),n.kid.kids.map(negK)):null;}},
+   {id:'dm_rev',law:'De Morganův zákon',label:'De Morgan: spojit pod jednu čáru',hint:'¬A·¬B → ¬(A+B)   ¬A+¬B → ¬(A·B)',
+    fn:function(n){
+      if(!isAO(n)||!n.kids.every(function(k){return k.t==='not'||(k.t==='lit'&&k.neg);}))return null;
+      return {t:'not',kid:mk(dualT(n.t),n.kids.map(comp))};}},
+   {id:'dist_e1',law:'distributivní zákon (vytýkání)',label:'Roznásobit součin se součtem',hint:'A·(B+C) → A·B + A·C',
+    fn:function(n){
+      if(n.t!=='and')return null;var j=-1,i;for(i=0;i<n.kids.length;i++)if(n.kids[i].t==='or'){j=i;break;}
+      if(j<0)return null;var oth=n.kids.filter(function(_,i){return i!==j;});
+      return mk('or',n.kids[j].kids.map(function(b){return mk('and',oth.concat([b]));}));}},
+   {id:'dist_e2',law:'distributivní zákon (vytýkání)',label:'Roznásobit součet se součinem',hint:'A + B·C → (A+B)·(A+C)',
+    fn:function(n){
+      if(n.t!=='or')return null;var j=-1,i;for(i=0;i<n.kids.length;i++)if(n.kids[i].t==='and'){j=i;break;}
+      if(j<0)return null;var oth=n.kids.filter(function(_,i){return i!==j;});
+      return mk('and',n.kids[j].kids.map(function(b){return mk('or',oth.concat([b]));}));}},
+   {id:'dist_f',law:'distributivní zákon (vytýkání)',label:'Vytknout',hint:'A·B + A·C → A·(B+C)   (A+B)·(A+C) → A + B·C',
+    fn:function(n){
+      if(!isAO(n))return null;var I=dualT(n.t),cnt={},first={},i,j;
+      for(i=0;i<n.kids.length;i++){var k=n.kids[i];if(k.t!==I)continue;
+        var seen={};k.kids.forEach(function(f){var kf=keyOf(f);if(seen[kf])return;seen[kf]=1;cnt[kf]=(cnt[kf]||0)+1;if(!first[kf])first[kf]=f;});}
+      var pick=null;
+      for(i=0;i<n.kids.length&&!pick;i++){var k2=n.kids[i];if(k2.t!==I)continue;
+        for(j=0;j<k2.kids.length;j++){var kf2=keyOf(k2.kids[j]);if(cnt[kf2]>=2){pick=kf2;break;}}}
+      if(!pick)return null;
+      var rests=[],out=[],placed=false;
+      n.kids.forEach(function(k3){
+        if(k3.t===I){var ix=-1;k3.kids.forEach(function(f,q){if(ix<0&&keyOf(f)===pick)ix=q;});
+          if(ix>=0){rests.push(mk(I,k3.kids.filter(function(_,q){return q!==ix;})));
+            if(!placed){placed=true;out.push('@');}return;}}
+        out.push(k3);});
+      var grp=mk(I,[cl(first[pick]),mk(n.t,rests)]);
+      return mk(n.t,out.map(function(o){return o==='@'?grp:o;}));}},
+   {id:'absorb',law:'zákon absorpce',label:'Absorpce',hint:'A + A·B → A   A·(A+B) → A',
+    fn:function(n){
+      if(!isAO(n))return null;var I=dualT(n.t),i,j;
+      for(i=0;i<n.kids.length;i++)for(j=0;j<n.kids.length;j++){
+        if(i===j||n.kids[j].t!==I)continue;
+        var Si=facs(n.kids[i],I),Sj=n.kids[j].kids;
+        if(Sj.length>Si.length&&subsetKeys(Si,Sj))return mk(n.t,dropIdx(n.kids,[j]));}
+      return null;}},
+   {id:'absneg',law:'zákon absorpce negace',label:'Absorpce negace',hint:'A + Ā·B → A + B   A·(Ā+B) → A·B',
+    fn:function(n){
+      if(!isAO(n))return null;var I=dualT(n.t),i,j,q;
+      for(i=0;i<n.kids.length;i++)for(j=0;j<n.kids.length;j++){
+        if(i===j||n.kids[j].t!==I)continue;
+        for(q=0;q<n.kids[j].kids.length;q++)if(isCompl(n.kids[i],n.kids[j].kids[q])){
+          var nk=n.kids.slice();nk[j]=mk(I,n.kids[j].kids.filter(function(_,z){return z!==q;}));return mk(n.t,nk);}}
+      return null;}},
+   {id:'merge',law:'zákon spojení',label:'Spojení',hint:'A·B + A·B̄ → A   (A+B)·(A+B̄) → A',
+    fn:function(n){
+      if(!isAO(n))return null;var I=dualT(n.t),i,j;
+      for(i=0;i<n.kids.length;i++)for(j=i+1;j<n.kids.length;j++){
+        var Si=facs(n.kids[i],I),Sj=facs(n.kids[j],I);
+        if(Si.length!==Sj.length||Si.length<2)continue;
+        var kj=keysOf(Sj),ki=keysOf(Si);
+        var da=Si.filter(function(f){return kj.indexOf(keyOf(f))<0;}),db=Sj.filter(function(f){return ki.indexOf(keyOf(f))<0;});
+        if(da.length!==1||db.length!==1||!isCompl(da[0],db[0]))continue;
+        var common=Si.filter(function(f){return kj.indexOf(keyOf(f))>=0;});
+        var nk=n.kids.slice();nk[i]=mk(I,common);return mk(n.t,dropIdx(nk,[j]));}
+      return null;}},
+   {id:'consensus',law:'absorpce konsenzu',label:'Konsenzus',hint:'A·B + Ā·C + B·C → A·B + Ā·C',
+    fn:function(n){
+      if(!isAO(n))return null;var I=dualT(n.t),i,j,k,a,b;
+      for(i=0;i<n.kids.length;i++)for(j=i+1;j<n.kids.length;j++){
+        var Si=facs(n.kids[i],I),Sj=facs(n.kids[j],I),pairs=[];
+        for(a=0;a<Si.length;a++)for(b=0;b<Sj.length;b++)if(isCompl(Si[a],Sj[b]))pairs.push([a,b]);
+        if(pairs.length!==1)continue;
+        var U=Si.filter(function(_,z){return z!==pairs[0][0];}).concat(Sj.filter(function(_,z){return z!==pairs[0][1];}));
+        if(!U.length)continue;
+        for(k=0;k<n.kids.length;k++){if(k===i||k===j)continue;
+          if(subsetKeys(U,facs(n.kids[k],I)))return mk(n.t,dropIdx(n.kids,[k]));}}
+      return null;}},
+   {id:'idem',law:'idempotence',label:'Opakování (vyškrtnout stejné)',hint:'A + A → A   A·A → A',
+    fn:function(n){
+      if(!isAO(n))return null;var seen={},out=[],dup=false;
+      n.kids.forEach(function(k){var kk=keyOf(k);if(seen[kk]){dup=true;return;}seen[kk]=1;out.push(k);});
+      return dup?mk(n.t,out):null;}},
+   {id:'compl',law:'komplementarita',label:'Komplementarita',hint:'A + Ā → 1   A·Ā → 0',
+    fn:function(n){
+      if(!isAO(n))return null;var i,j;
+      for(i=0;i<n.kids.length;i++)for(j=i+1;j<n.kids.length;j++)if(isCompl(n.kids[i],n.kids[j])){
+        var rest=dropIdx(n.kids,[i,j]);return mk(n.t,[{t:'const',v:n.t==='or'?1:0}].concat(rest));}
+      return null;}},
+   {id:'neutral',law:'neutralita 0 a 1',label:'Neutralita (škrtnout 1 v součinu, 0 v součtu)',hint:'A·1 → A   A+0 → A',
+    fn:function(n){
+      if(!isAO(n))return null;var nv=n.t==='and'?1:0,out=n.kids.filter(function(k){return !(k.t==='const'&&k.v===nv);});
+      return out.length<n.kids.length?mk(n.t,out):null;}},
+   {id:'agres',law:'agresivita 0 a 1',label:'Agresivita (0 v součinu, 1 v součtu)',hint:'A·0 → 0   A+1 → 1',
+    fn:function(n){
+      if(!isAO(n))return null;var av=n.t==='and'?0:1;
+      return n.kids.some(function(k){return k.t==='const'&&k.v===av;})?{t:'const',v:av}:null;}},
+   {id:'commut',law:'komutativní zákon',label:'Obrátit pořadí',hint:'A + B → B + A   A·B → B·A',
+    fn:function(n){return isAO(n)&&n.kids.length>=2?{t:n.t,kids:n.kids.slice().reverse()}:null;}}
+  ];
+  function nodeAt(root,path){var n=root,i;for(i=0;i<path.length;i++){if(!n)return null;n=n.t==='not'?(path[i]===0?n.kid:null):(n.kids?n.kids[path[i]]:null);}return n||null;}
+  function replaceAt(root,path,rep){
+    if(!path.length)return rep;
+    var c=cl(root),n=c,i;
+    for(i=0;i<path.length-1;i++)n=n.t==='not'?n.kid:n.kids[path[i]];
+    if(n.t==='not')n.kid=rep;else n.kids[path[path.length-1]]=rep;
+    return c;
+  }
+  function normTree(n){
+    if(n.t==='not')return {t:'not',kid:normTree(n.kid)};
+    if(isAO(n))return mk(n.t,n.kids.map(normTree));
+    return n;
+  }
+  function toksOf(n){
+    var out=[];
+    (function w(x,parentT){
+      if(x.t==='lit')out.push((x.neg?'!':'')+'x'+x.b);
+      else if(x.t==='const')out.push(''+x.v);
+      else if(x.t==='not'){out.push('N(');w(x.kid,null);out.push(')');}
+      else{
+        var par=(x.t==='or'&&parentT==='and');
+        if(par)out.push('(');
+        x.kids.forEach(function(k,i){if(i)out.push(x.t==='and'?'*':'+');w(k,x.t);});
+        if(par)out.push(')');
+      }
+    })(n,null);
+    return out;
+  }
+  function pathStr(path){return path.length?path.join('.'):'r';}
+  function strPath(sp){return sp==='r'||!sp?[]:sp.split('.').map(Number);}
+  function treeHTML(n,f,selKey){
+    function w(x,path,parentT){
+      var key=pathStr(path),sc=key===selKey?' sel':'',at=' data-act="apick" data-f="'+f+'" data-p="'+key+'"';
+      if(x.t==='lit')return '<span class="tk'+sc+'"'+at+'>'+litHTML({b:x.b,neg:x.neg})+'</span>';
+      if(x.t==='const')return '<span class="tk'+sc+'"'+at+'>'+x.v+'</span>';
+      if(x.t==='not')return '<span class="ovg'+sc+'"'+at+'>'+w(x.kid,path.concat([0]),null)+'</span>';
+      var op='<span class="tk op"'+at+'>'+(x.t==='and'?'·':'+')+'</span>';
+      var par=(x.t==='or'&&parentT==='and'),inner=x.kids.map(function(k,i){return w(k,path.concat([i]),x.t);}).join(op);
+      return '<span class="nd'+sc+'">'+(par?'(':'')+inner+(par?')':'')+'</span>';
+    }
+    return w(n,[],null);
+  }
+  function workNode(f){
+    var A=algOf(f),toks=A.steps.length?A.steps[A.steps.length-1].toks:state.expr[f][A.base];
+    var P=parseGen(toks);return P.err?{err:P.err,toks:toks}:{node:P.node,toks:toks};
+  }
+  function curPath(f,root){
+    var sp=selp[f],path=sp===undefined?[]:strPath(sp);
+    return nodeAt(root,path)?path:[];
+  }
+  function applyRule(f,id){
+    var A=algOf(f),W=workNode(f);if(W.err)return;
+    var rule=RULES.filter(function(r){return r.id===id;})[0];if(!rule)return;
+    var path=curPath(f,W.node),n=nodeAt(W.node,path),res=rule.fn(cl(n));
+    if(!res){am(f,'warn',['Tenhle zákon na vybranou část nejde použít.']);return;}
+    var nr=normTree(replaceAt(W.node,path,res)),toks=toksOf(nr);
+    if(toks.length>160){am(f,'warn',['Výraz by byl příliš dlouhý.']);return;}
+    if(A.steps.length>=12){am(f,'warn',['Víc než 12 kroků se sem nevejde.']);return;}
+    var v0=vecOf(W.node),v1=vecOf(nr);
+    if(diffRows(v0,v1).length){am(f,'err',['Vnitřní chyba: úprava změnila hodnotu. Tohle mi prosím nahlas.']);return;}
+    A.steps.push({toks:toks,law:rule.law});algAct[f]=A.steps.length-1;
+    var keep=nodeAt(nr,path)?path:[];selp[f]=pathStr(keep);
+    amsgs[f]=null;save();renderLoopPanel(f);
+  }
+  function algOf(f){return state.alg[f][state.tab[f]==='nor'?'nor':'nand'];}
+  function stepsOf(f){return algOf(f).steps;}
+  function activeStep(f){
+    var n=stepsOf(f).length;if(!n)return -1;
+    var k=algAct[f];return (typeof k==='number'&&k>=0&&k<n)?k:n-1;
+  }
+  function caretOf(f){
+    var k=activeStep(f);if(k<0)return 0;
+    var len=stepsOf(f)[k].toks.length,c=caret[f];
+    return (typeof c==='number'&&c>=0&&c<=len)?c:len;
+  }
+  function renderAlgPanel(f,box){
+    var A=algOf(f),h='',base=state.expr[f][A.base],k=activeStep(f),b,head=htmlSub(state.fnames[f])+' = ';
+    var seg=function(act,key,cur,items){
+      return '<div class="tabs" role="group">'+items.map(function(it){return '<button type="button" data-act="'+act+'" data-f="'+f+'" data-v="'+it[0]+'" aria-pressed="'+(cur===it[0])+'">'+it[1]+'</button>';}).join('')+'</div>';
+    };
+    var lawMode=amode[f]!=='man';
+    h+='<p class="hint"><b>'+(A.target==='nand'?'NAND-NAND':'NOR-NOR')+'.</b> Vycházíš ze '+(A.base==='dnf'?'součtu':'součinu')+', který jsi složil v záložce '+(A.base==='dnf'?'Součet':'Součin')+'. Cíl: výraz jen ze '+(A.base==='dnf'?'součinů':'součtů')+' pod čarami. Postup: dvojí negace, pak De Morgan. '+(lawMode
+      ?'Klikneš na část výrazu, vybereš zákon a tool ho za tebe provede jako nový krok. Rozhoduješ ty, který zákon a kde.'
+      :'Každý krok je nový výraz, který skládáš ručně, a musí se rovnat předchozímu. Tool ověří rovnost, ne to, zda jsi vybral správný zákon.')+'</p>';
+    h+='<div class="fieldrow"><span class="label">Režim</span>'+seg('amode','mode',lawMode?'law':'man',[['law','Zákony (tool upraví)'],['man','Ručně']])+'</div>';
+    var W=lawMode?workNode(f):null,wpath=W&&W.node?curPath(f,W.node):[],wkey=pathStr(wpath);
+    var rootHead=function(){return '<span class="tk hd" data-act="apick" data-f="'+f+'" data-p="r" title="Vybrat celý výraz">'+head+'</span>';};
+    if(lawMode&&!A.steps.length&&W&&W.node)h+='<p class="lexpr xl" title="Výchozí výraz">'+rootHead()+treeHTML(W.node,f,wkey)+'</p>';
+    else h+='<p class="lexpr xl" title="Výchozí výraz">'+head+(base.length?toksToHTML(base,-1):'<span class="ph">… (nejdřív ho sestav v záložce '+(A.base==='dnf'?'Součet':'Součin')+')</span>')+'</p>';
+    A.steps.forEach(function(st,si){
+      var act=si===k,lastS=si===A.steps.length-1,selectable=lawMode&&lastS&&W&&W.node;
+      h+='<div class="astep'+(act?' act':'')+'"><div class="ahead"><span class="label">Krok '+(si+1)+'</span>'
+        +'<select class="alaw" data-f="'+f+'" data-s="'+si+'" aria-label="Zákon v kroku '+(si+1)+'"><option value="">— zákon —</option>'
+        +LAWS.map(function(l){return '<option value="'+esc(l)+'"'+(st.law===l?' selected':'')+'>'+esc(l)+'</option>';}).join('')+'</select>'
+        +(act||lawMode?'':'<button type="button" class="btn sm quiet" data-act="asel" data-f="'+f+'" data-s="'+si+'">Upravit</button>')
+        +'<button type="button" class="lx" data-act="adel" data-f="'+f+'" data-s="'+si+'" aria-label="Smazat krok '+(si+1)+'">×</button></div>'
+        +(selectable
+          ?'<p class="lexpr xl">'+rootHead()+treeHTML(W.node,f,wkey)+'</p></div>'
+          :'<p class="lexpr xl"'+(lawMode?'':' data-act="asel" data-f="'+f+'" data-s="'+si+'"')+'>'+(act&&!lawMode?'<span class="tk hd" data-act="acar" data-f="'+f+'" data-s="'+si+'" data-i="-1" title="Kurzor na začátek">'+head+'</span>':head)+(st.toks.length||act?toksToHTML(st.toks,(act&&!lawMode)?caretOf(f):-1,(act&&!lawMode)?f:undefined,si):'<span class="ph">…</span>')+'</p></div>');
+    });
+    if(lawMode){
+      if(!W||W.err){h+='<p class="lmsg err">'+(W?'Výraz nejde použít: '+W.err+' Oprav ho v záložce '+(A.base==='dnf'?'Součet':'Součin')+'.':'')+'</p>';}
+      else{
+        var selNode=nodeAt(W.node,wpath),app=RULES.filter(function(r){return r.fn(cl(selNode));});
+        h+='<p class="hint">Klikni na proměnnou, na znaménko (+ nebo ·) nebo na okraj čáry. Označí se ta část, na kterou se zákon použije. Šipkou nahoru vybereš větší část, „Celý výraz“ vybere všechno.</p>';
+        h+='<div class="lactions"><button type="button" class="btn sm" data-act="apar" data-f="'+f+'"'+(wpath.length?'':' disabled')+'>⬆ Větší část</button>'
+          +'<button type="button" class="btn sm quiet" data-act="aroot" data-f="'+f+'"'+(wpath.length?'':' disabled')+'>Celý výraz</button></div>';
+        h+='<span class="label">Zákony, které jdou použít na označenou část</span><div class="rules">';
+        if(!app.length)h+='<p class="hint">Na označenou část nepasuje žádný zákon. Zkus vybrat jinou část.</p>';
+        app.forEach(function(r){h+='<div class="rule"><button type="button" class="btn sm" data-act="arule" data-f="'+f+'" data-r="'+r.id+'">'+esc(r.label)+'</button><span class="hintf">'+esc(r.hint)+'</span></div>';});
+        h+='</div>';
+      }
+    }
+    if(!lawMode)h+='<div class="lactions"><button type="button" class="btn sm primary" data-act="anew" data-f="'+f+'">+ '+(A.steps.length?'Další krok':'První krok')+'</button></div>';
+    if(!lawMode&&k>=0){
+      var armed=!!neg[f];
+      h+='<p class="hint">Upravuješ krok '+(k+1)+'. Kurzor přesuneš kliknutím do výrazu (na začátek klikni na „F = “) nebo šipkami ◀ ▶. <b>¬(</b> otevře skupinu s čárou nad celou skupinou, zavřeš ji tlačítkem <b>)</b>. Tlačítko Obalit čárou dá celý výraz pod čáru.</p>';
+      h+='<div class="xpad" role="group" aria-label="Tlačítka pro úpravu výrazu">';
+      h+='<button type="button" class="btn sm" data-act="aneg" data-f="'+f+'" aria-pressed="'+armed+'">Negace</button><span class="sep"></span>';
+      for(b=state.n-1;b>=0;b--)h+='<button type="button" class="btn sm" data-act="avar" data-f="'+f+'" data-v="'+b+'" aria-label="'+(armed?'negované x':'x')+b+'">'+(armed?'<span class="ov">x<sub>'+b+'</sub></span>':'x<sub>'+b+'</sub>')+'</button>';
+      h+='<span class="sep"></span>';
+      [['*','·','krát'],['+','+','plus'],['(','(','levá závorka'],[')',')','pravá závorka'],['N(','¬(','začátek skupiny s čárou'],['0','0','nula'],['1','1','jednička']].forEach(function(o){
+        h+='<button type="button" class="btn sm" data-act="aop" data-f="'+f+'" data-t="'+o[0]+'" aria-label="'+o[2]+'">'+o[1]+'</button>';
+      });
+      h+='<span class="sep"></span><button type="button" class="btn sm" data-act="acl" data-f="'+f+'" aria-label="Kurzor doleva">◀</button>'
+        +'<button type="button" class="btn sm" data-act="acr" data-f="'+f+'" aria-label="Kurzor doprava">▶</button>'
+        +'<span class="sep"></span><button type="button" class="btn sm" data-act="abs" data-f="'+f+'" aria-label="Smazat znak před kurzorem">⌫</button>'
+        +'<button type="button" class="btn sm quiet" data-act="awrap" data-f="'+f+'">Obalit čárou</button>'
+        +'<button type="button" class="btn sm quiet" data-act="aclr" data-f="'+f+'">Vymazat krok</button></div>';
+    }
+    h+='<div class="lactions"><button type="button" class="btn sm primary" data-act="achk" data-f="'+f+'">Zkontrolovat</button></div>';
+    h+='<div class="lmsg'+(amsgs[f]?' '+amsgs[f].t:'')+'" id="kam-'+f+'" role="status">'+(amsgs[f]?amsgs[f].lines.map(function(l){return '<p>'+l+'</p>';}).join(''):'')+'</div>';
+    box.innerHTML=h;
+  }
+  function am(f,t,lines){amsgs[f]={t:t,lines:lines};renderLoopPanel(f);}
+  function checkAlg(f){
+    var A=algOf(f),one=A.base==='dnf',name=one?'Součet':'Součin',base=state.expr[f][A.base];
+    var P0=parseGen(base);
+    if(P0.err){am(f,'err',['Výchozí výraz ('+name+') není v pořádku: '+P0.err+' Oprav ho v záložce '+name+'.']);return;}
+    var V0=vecOf(P0.node),sz=size(),r,wrong=[];
+    for(r=0;r<sz;r++){var v=state.vals[f][r];if(v!==2&&V0[r]!==(v===1?1:0))wrong.push(r);}
+    if(wrong.length){am(f,'err',['Výchozí výraz se nerovná funkci v řádcích '+wrong.slice(0,6).join(', ')+'. Oprav ho v záložce '+name+'.']);return;}
+    if(!A.steps.length){am(f,'warn',['Přidej aspoň jeden krok.']);return;}
+    var prev=V0,lines=[],type='ok',last=null,k;
+    for(k=0;k<A.steps.length;k++){
+      var st=A.steps[k],P=parseGen(st.toks);
+      if(P.err){am(f,'err',['Krok '+(k+1)+': '+P.err]);return;}
+      var Vk=vecOf(P.node),d=diffRows(prev,Vk);
+      if(d.length){am(f,'err',['Krok '+(k+1)+' se nerovná '+(k?'kroku '+k:'výchozímu výrazu')+'. Liší se v řádcích '+d.slice(0,8).join(', ')+(d.length>8?' …':'')+'.','Zkontroluj negace a znaménka. Každá úprava musí zachovat hodnotu výrazu.']);return;}
+      if(!st.law){type='warn';lines.push('U kroku '+(k+1)+' chybí zákon, který jsi použil.');}
+      prev=Vk;last={node:P.node,toks:st.toks};
+    }
+    var F=formCheck(last.node,A.target),nm=A.target==='nand'?'NAND-NAND':'NOR-NOR';
+    if(F.lines.length){am(f,'err',['Všechny kroky sedí, ale výsledek není ve tvaru '+nm+'.'].concat(F.lines));return;}
+    var ginfo='Hradel '+(A.target==='nand'?'NAND':'NOR')+': '+F.gates+'.'+(F.neg.length?' Invertory na vstupu: '+F.neg.map(function(b){return 'x<sub>'+b+'</sub>';}).join(', ')+'.':'');
+    lines.unshift('Správně. Všechny kroky sedí a výsledek je ve tvaru '+nm+'. '+ginfo);
+    am(f,type,lines);
+  }
+  function algEdit(f,fn){
+    var k=activeStep(f);if(k<0)return;
+    var st=stepsOf(f)[k],c=caretOf(f),res=fn(st.toks,c);
+    caret[f]=res;algAct[f]=k;amsgs[f]=null;save();renderLoopPanel(f);
+  }
+  function algAct_(f,b,act){
+    var A=algOf(f);
+    if(act==='anew'){
+      if(A.steps.length>=12){am(f,'warn',['Víc než 12 kroků se sem nevejde.']);return;}
+      var src=A.steps.length?A.steps[A.steps.length-1].toks:state.expr[f][A.base];
+      A.steps.push({toks:src.slice(),law:''});algAct[f]=A.steps.length-1;caret[f]=src.length;amsgs[f]=null;save();renderLoopPanel(f);
+    }
+    else if(act==='asel'){algAct[f]=+b.dataset.s;caret[f]=undefined;renderLoopPanel(f);}
+    else if(act==='adel'){
+      var snap=JSON.stringify(A.steps);
+      A.steps.splice(+b.dataset.s,1);algAct[f]=undefined;caret[f]=undefined;amsgs[f]=null;save();renderLoopPanel(f);
+      showToast('Krok smazán.','Vrátit',function(){A.steps=JSON.parse(snap);save();renderLoopPanel(f);});
+    }
+    else if(act==='atok'||act==='acar'){algAct[f]=+b.dataset.s;caret[f]=+b.dataset.i+1;renderLoopPanel(f);}
+    else if(act==='acl'||act==='acr'){
+      var kc=activeStep(f);if(kc<0)return;
+      var len=stepsOf(f)[kc].toks.length,cc=caretOf(f)+(act==='acl'?-1:1);
+      caret[f]=Math.max(0,Math.min(len,cc));algAct[f]=kc;renderLoopPanel(f);refocus(f,b);
+    }
+    else if(act==='aneg'){neg[f]=!neg[f];renderLoopPanel(f);refocus(f,b);}
+    else if(act==='avar'||act==='aop'){
+      var tok=act==='avar'?((neg[f]?'!':'')+'x'+b.dataset.v):b.dataset.t;neg[f]=false;
+      algEdit(f,function(t,c){if(t.length<160){t.splice(c,0,tok);return c+1;}return c;});refocus(f,b);
+    }
+    else if(act==='abs'){algEdit(f,function(t,c){if(c>0){t.splice(c-1,1);return c-1;}return c;});refocus(f,b);}
+    else if(act==='awrap'){algEdit(f,function(t){if(t.length<158){t.unshift('N(');t.push(')');}return t.length;});}
+    else if(act==='aclr'){
+      var kk=activeStep(f);if(kk<0)return;
+      var old=A.steps[kk].toks.slice();
+      algEdit(f,function(t){t.length=0;return 0;});
+      showToast('Krok vymazán.','Vrátit',function(){A.steps[kk].toks=old;save();renderLoopPanel(f);});
+    }
+    else if(act==='achk')checkAlg(f);
+    else if(act==='amode'){amode[f]=b.dataset.v;amsgs[f]=null;renderLoopPanel(f);}
+    else if(act==='apick'){selp[f]=b.dataset.p;renderLoopPanel(f);}
+    else if(act==='aroot'){selp[f]='r';renderLoopPanel(f);}
+    else if(act==='apar'){var W2=workNode(f);if(W2.node){var pp=curPath(f,W2.node);pp.pop();selp[f]=pathStr(pp);}renderLoopPanel(f);}
+    else if(act==='arule')applyRule(f,b.dataset.r);
+  }
+
+  /* ---------- expression typed by the student ---------- */
+  function parseExpr(toks,mode){
+    var L=toks.length,i,t,isLit=function(x){return LITRE.test(x);},isOp=function(x){return x==='*'||x==='+';};
+    var lit=function(x){var m=LITRE.exec(x);return {b:+m[2],neg:!!m[1]};};
+    if(!L)return {err:'Výraz je zatím prázdný.'};
+    var terms=[],cur,prev=null;
+    if(mode==='dnf'){
+      if(toks.some(function(x){return x==='('||x===')';}))return {err:'V součtovém tvaru žádné závorky nepotřebuješ. Členy jsou součiny a sčítají se.'};
+      cur=[];terms.push(cur);
+      for(i=0;i<L;i++){
+        t=toks[i];
+        if(isLit(t)){
+          if(prev!==null&&isLit(prev))return {err:'Mezi dvěma proměnnými chybí znaménko (· nebo +).'};
+          cur.push(lit(t));
+        }else{
+          if(prev===null)return {err:'Výraz nemůže začínat znaménkem.'};
+          if(isOp(prev))return {err:'Dvě znaménka za sebou.'};
+          if(t==='+'){cur=[];terms.push(cur);}
+        }
+        prev=t;
+      }
+      if(isOp(prev))return {err:'Výraz nemůže končit znaménkem.'};
+      return {terms:terms};
+    }
+    var st='S0';
+    for(i=0;i<L;i++){
+      t=toks[i];
+      if(st==='S0'||st==='S1'){
+        if(isLit(t)){terms.push([lit(t)]);st='A';}
+        else if(t==='('){cur=[];st='L';}
+        else if(t===')')return {err:'Zavírací závorka bez otevírací.'};
+        else return {err:st==='S0'?'Výraz nemůže začínat znaménkem.':'Dvě znaménka za sebou.'};
+      }else if(st==='A'){
+        if(t==='*')st='S1';
+        else if(t==='+')return {err:'Sčítání patří dovnitř závorek, závorky se mezi sebou násobí (·).'};
+        else if(t===')')return {err:'Zavírací závorka bez otevírací.'};
+        else return {err:'Mezi členy chybí znaménko ·.'};
+      }else if(st==='L'){
+        if(isLit(t)){cur.push(lit(t));st='O';}
+        else if(t==='(')return {err:'Závorky se nesmí vnořovat.'};
+        else if(t===')')return {err:'Prázdná závorka.'};
+        else return {err:'Součet v závorce nemůže začínat znaménkem.'};
+      }else{
+        if(t==='+')st='L';
+        else if(t===')'){terms.push(cur);st='A';}
+        else if(t==='*')return {err:'V závorce se sčítá (+). Násobení patří mezi závorky.'};
+        else if(t==='(')return {err:'Závorky se nesmí vnořovat.'};
+        else return {err:'Mezi proměnnými v závorce chybí znaménko +.'};
+      }
+    }
+    if(st==='S1')return {err:'Výraz nemůže končit znaménkem.'};
+    if(st==='L')return {err:'Součet v závorce nemůže končit znaménkem.'};
+    if(st==='O')return {err:'Chybí zavírací závorka.'};
+    return {terms:terms};
+  }
+  function evalTerms(terms,mode,i){
+    var lv=function(l){var bit=(i>>l.b)&1;return l.neg?1-bit:bit;};
+    if(mode==='dnf')return terms.some(function(t){return t.every(function(l){return lv(l)===1;});})?1:0;
+    return terms.every(function(t){return t.some(function(l){return lv(l)===1;});})?1:0;
+  }
+  function xm(f,t,lines){xmsgs[f]={t:t,lines:lines};renderLoopPanel(f);}
+  function checkExpr(f){
+    var mode=state.tab[f],one=mode==='dnf',toks=state.expr[f][mode],P=parseExpr(toks,mode);
+    if(P.err){xm(f,'err',[P.err]);return;}
+    var terms=P.terms,sz=size(),wrong=[],i,v,e,g,a1=0,a0=0;
+    for(i=0;i<sz;i++){
+      v=state.vals[f][i];if(v===2)continue;
+      e=v===1?1:0;g=evalTerms(terms,mode,i);
+      if(e!==g){wrong.push('řádek '+i+' (má být '+e+', výraz dává '+g+')');if(e===1)a1++;else a0++;}
+    }
+    if(wrong.length){
+      var lines=['Výraz se nerovná zadané funkci. Nesedí: '+wrong.slice(0,6).join('; ')+(wrong.length>6?' …':'')+'.'];
+      if(one){
+        if(a1)lines.push('Některá jednička není pokrytá žádným členem.');
+        if(a0)lines.push('Některý člen zasahuje do nuly. Zkontroluj, zda máš u proměnných správně negaci.');
+      }else{
+        if(a0)lines.push('Některou nulu žádný součet nevyloučil.');
+        if(a1)lines.push('Některý součet vylučuje i jedničku. Zkontroluj, zda máš u proměnných správně negaci (v součinovém tvaru je nula přímá).');
+      }
+      xm(f,'err',lines);return;
+    }
+    var A=allowedOf(f,mode),S=solveMin(f,mode),out=[],type='ok',lits=0;
+    var bump=function(t){if(t==='warn'&&type==='ok')type='warn';};
+    terms.forEach(function(t,k){
+      lits+=t.length;
+      var seen={},conflict=false,dup=false,mask=0,val=0,nm=(one?'Člen ':'Součet ')+(k+1);
+      t.forEach(function(l){
+        if(seen[l.b]!==undefined){if(seen[l.b]!==l.neg)conflict=true;else dup=true;}
+        seen[l.b]=l.neg;mask|=1<<l.b;
+        var bit=one?(l.neg?0:1):(l.neg?1:0);
+        val=(val&~(1<<l.b))|(bit<<l.b);
+      });
+      if(conflict){bump('warn');out.push(nm+' obsahuje proměnnou i její negaci, takový '+(one?'člen':'součet')+' je vždy '+(one?'0':'1')+' a je zbytečný.');}
+      else if(dup){bump('warn');out.push(nm+' obsahuje stejnou proměnnou víckrát.');}
+      else if(extendable(mask,val,A.al)){bump('warn');out.push(nm+' jde ještě zkrátit (odpovídající smyčka jde zvětšit).');}
+    });
+    if(terms.length>S.k){bump('warn');out.push('Výraz je správný, ale jde to s menším počtem '+(one?'členů':'součtů')+'.');}
+    else if(type==='ok'&&lits>S.lits){bump('warn');out.push('Počet '+(one?'členů':'součtů')+' sedí, ale jde to s menším počtem proměnných.');}
+    if(type==='ok')out=['Správně a minimálně. Výraz sedí na všechny řádky a nejde ho zkrátit ani sloučit.'+(S.sols.length>1?' Existuje i '+(S.sols.length-1)+' další stejně dobré řešení.':'')];
+    else out.unshift('Výraz sedí na všechny řádky, ale není minimální.');
+    xm(f,type,out);
+  }
+  function refocus(f,b){
+    var q='#kl-'+f+' [data-act="'+b.dataset.act+'"]'+(b.dataset.v!==undefined?'[data-v="'+b.dataset.v+'"]':'')+(b.dataset.t!==undefined?'[data-t="'+b.dataset.t+'"]':'');
+    var el=document.querySelector(q);if(el)el.focus();
+  }
+  function selSet(f){return sel[f]||(sel[f]=new Set());}
+  function refreshLoops(f){renderMap(f);renderLoopPanel(f);save();}
+  function toggleSel(f,i){
+    var S=selSet(f),g=cellOf[f][i];
+    if(S.has(i)){S.delete(i);g.classList.remove('sel');}else{S.add(i);g.classList.add('sel');}
+    var c=$('kls-'+f);if(c)c.textContent='('+S.size+')';
+    if(msgs[f]){msgs[f]=null;var m=$('klm-'+f);if(m){m.className='lmsg';m.innerHTML='';}}
+  }
+  function sameCells(a,b){return a.length===b.length&&a.every(function(x,k){return x===b[k];});}
+  function addLoop(f){
+    var mode=state.tab[f],one=mode==='dnf',cells=Array.from(selSet(f)).sort(numSort),A=allowedOf(f,mode),info=cubeInfo(cells);
+    var keep=one?'jedničky a X':'nuly a X';
+    if(!cells.length){setMsg(f,'warn',['Nejdřív klikni na pole, která chceš obklopit.']);}
+    else if(!info.ok&&info.why==='size'){setMsg(f,'err',['Smyčka musí mít 1, 2, 4, 8… polí, ty jsi vybral '+cells.length+'.']);}
+    else{
+      var badCells=cells.filter(function(i){return !A.al[i];});
+      if(badCells.length){setMsg(f,'err',['Do smyčky nepatří pole '+badCells.join(', ')+' (má hodnotu '+(one?'0':'1')+'). Smyčka smí obsahovat jen '+keep+'.']);}
+      else if(!info.ok){setMsg(f,'err',['Vybraná pole netvoří souvislý obdélník. Pozor: mapa se na okrajích zalamuje, levý okraj sousedí s pravým a horní se spodním.']);}
+      else if(!cells.some(function(i){return A.tg[i];})){setMsg(f,'err',['Smyčka obsahuje jen X, nepokrývá žádnou '+(one?'jedničku':'nulu')+'.']);}
+      else if(state.loops[f][mode].some(function(c){return sameCells(c,cells);})){setMsg(f,'warn',['Tuhle smyčku už máš.']);}
+      else{
+        state.loops[f][mode].push(cells);
+        var st=loopState(f,mode,cells);
+        setMsg(f,st.prime?'ok':'warn',['Smyčka přidána ('+cells.length+' '+(cells.length<5&&cells.length>1?'pole':cells.length===1?'pole':'polí')+').'+(st.prime?'':' Pozor, tuhle smyčku jde ještě zvětšit.')]);
+        sel[f]=new Set();
+      }
+    }
+    refreshLoops(f);
+  }
+  function checkLoops(f){
+    var mode=state.tab[f],one=mode==='dnf',loops=state.loops[f][mode],what=one?'jedniček':'nul',
+        S=solveMin(f,mode),lines=[],type='ok';
+    var bump=function(t){if(t==='err'||(t==='warn'&&type==='ok'))type=t;};
+    if(!S.targets.length){setMsg(f,'ok',['Funkce nemá žádných '+what+', žádné smyčky nejsou potřeba.']);renderLoopPanel(f);return;}
+    if(!loops.length){setMsg(f,'warn',['Zatím nemáš žádnou smyčku.']);renderLoopPanel(f);return;}
+    var cover=new Set(),sts=loops.map(function(c){return loopState(f,mode,c);}),nValid=0,lits=0;
+    sts.forEach(function(st,k){
+      if(!st.valid){bump('err');lines.push('Smyčka '+(k+1)+' už není platná (změnily se hodnoty v mapě).');}
+      else{nValid++;lits+=st.info.lits;loops[k].forEach(function(i){cover.add(i);});}
+    });
+    var miss=S.targets.filter(function(i){return !cover.has(i);});
+    if(miss.length){bump('err');lines.push('Nezakryté '+what+': '+miss.join(', ')+'.');}
+    sts.forEach(function(st,k){if(st.valid&&!st.prime){bump('warn');lines.push('Smyčka '+(k+1)+' jde ještě zvětšit. Hledej blok s dvojnásobným počtem polí.');}});
+    if(!miss.length){
+      if(nValid>S.k){bump('warn');lines.push('Máš '+nValid+' smyček, ale stačí '+S.k+'. Každá smyčka by měla pokrývat něco, co nepokrývají ostatní.');}
+      else if(type==='ok'&&lits>S.lits){bump('warn');lines.push('Počet smyček sedí, ale jde to s menším počtem proměnných ve členech (celkem '+S.lits+', ty máš '+lits+'). Zkus jiné velké smyčky.');}
+    }
+    if(type==='ok')lines=['Správně. Minimální počet smyček ('+S.k+') a každá je největší možná.'+(S.sols.length>1?' Existuje i '+(S.sols.length-1)+' další stejně dobré řešení (jako „Buď / Anebo“ na slidu 11).':'')];
+    setMsg(f,type,lines);
+    renderLoopPanel(f);
+  }
+  function revealMin(f){
+    var mode=state.tab[f],S=solveMin(f,mode);
+    withUndo('Minimální řešení vloženo.',function(){
+      state.loops[f][mode]=S.sols[0].map(function(pi){return S.primes[pi].cells.slice();});
+      sel[f]=new Set();
+    });
+    setMsg(f,'ok',[S.k?('Minimální řešení: '+S.k+' '+(S.k===1?'smyčka':S.k<5?'smyčky':'smyček')+', celkem '+S.lits+' proměnných ve členech.'+(S.sols.length>1?' Existuje i '+(S.sols.length-1)+' další stejně dobré řešení.':'')):'Funkce nemá žádné '+(mode==='dnf'?'jedničky':'nuly')+', smyčky nejsou potřeba.']);
+    renderLoopPanel(f);
+  }
+  function doAct(b){
+    var f=+b.dataset.f,act=b.dataset.act;
+    if(act==='tab'){
+      state.tab[f]=b.dataset.tab;sel[f]=new Set();msgs[f]=null;neg[f]=false;selp[f]=undefined;algAct[f]=undefined;caret[f]=undefined;amsgs[f]=null;
+      var bs=document.querySelectorAll('[data-act="tab"][data-f="'+f+'"]');
+      for(var q=0;q<bs.length;q++)bs[q].setAttribute('aria-pressed',String(bs[q]===b));
+      refreshLoops(f);
+    }else if(act==='ladd')addLoop(f);
+    else if(act==='lsel'){sel[f]=new Set();msgs[f]=null;refreshLoops(f);}
+    else if(act==='ldel'){state.loops[f][state.tab[f]].splice(+b.dataset.k,1);msgs[f]=null;refreshLoops(f);}
+    else if(act==='lclr'){var mode=state.tab[f],snap=state.loops[f][mode];state.loops[f][mode]=[];msgs[f]=null;refreshLoops(f);showToast('Smyčky smazány.','Vrátit',function(){state.loops[f][mode]=snap;refreshLoops(f);});}
+    else if(act==='xneg'){neg[f]=!neg[f];renderLoopPanel(f);refocus(f,b);}
+    else if(act==='xv'||act==='xop'){
+      var E=state.expr[f][state.tab[f]];
+      if(E.length<120)E.push(act==='xv'?((neg[f]?'!':'')+'x'+b.dataset.v):b.dataset.t);
+      neg[f]=false;xmsgs[f]=null;save();renderLoopPanel(f);refocus(f,b);
+    }
+    else if(act==='xbs'){state.expr[f][state.tab[f]].pop();neg[f]=false;xmsgs[f]=null;save();renderLoopPanel(f);refocus(f,b);}
+    else if(act==='xclr'){
+      var m2=state.tab[f],old=state.expr[f][m2];
+      state.expr[f][m2]=[];xmsgs[f]=null;save();renderLoopPanel(f);
+      if(old.length)showToast('Výraz vymazán.','Vrátit',function(){state.expr[f][m2]=old;save();renderLoopPanel(f);});
+    }
+    else if(act==='xchk')checkExpr(f);
+    else if(act.charAt(0)==='a'&&act!=='ladd')algAct_(f,b,act);
+    else if(act==='lchk')checkLoops(f);
+    else if(act==='lshow')revealMin(f);
+  }
+
+  /* ---------- settings ---------- */
+  function renderSettings(){
+    var r=document.querySelector('input[name="nv"][value="'+state.n+'"]');if(r)r.checked=true;
+    var s=document.querySelector('input[name="sym"][value="'+state.sym+'"]');if(s)s.checked=true;
+    $('fCount').textContent=state.fcount;
+    $('fMinus').disabled=state.fcount<=1;
+    $('fPlus').disabled=state.fcount>=MAXF;
+  }
+  function fullRender(){sel=[];msgs=[];xmsgs=[];amsgs=[];algAct=[];caret=[];neg=[];selp=[];renderSettings();renderCards();updateNote();}
+  document.querySelectorAll('input[name="nv"]').forEach(function(r){
+    r.addEventListener('change',function(){if(r.checked){state.n=+r.value;state.example=false;state.loops=emptyLoops();state.expr=emptyExpr();state.alg=emptyAlg();state.tab=emptyTabs();fullRender();save();}});
+  });
+  document.querySelectorAll('input[name="sym"]').forEach(function(r){
+    r.addEventListener('change',function(){if(r.checked){state.sym=r.value;fullRender();save();}});
+  });
+  $('fMinus').addEventListener('click',function(){if(state.fcount>1){state.fcount--;fullRender();save();}});
+  $('fPlus').addEventListener('click',function(){if(state.fcount<MAXF){state.fcount++;fullRender();save();}});
+
+  /* ---------- toast + undo ---------- */
+  var toastTimer=null;
+  function showToast(msg,actLabel,act){
+    $('toastMsg').textContent=msg;
+    var b=$('toastAct');
+    b.hidden=!actLabel;b.textContent=actLabel||'';
+    b.onclick=function(){if(act)act();$('toast').hidden=true;};
+    $('toast').hidden=false;
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){$('toast').hidden=true;},8000);
+  }
+  function withUndo(msg,fn){
+    var snap=JSON.stringify(state);
+    fn();fullRender();save();
+    showToast(msg,'Vrátit',function(){state=JSON.parse(snap);fullRender();save();});
+  }
+  $('clearBtn').addEventListener('click',function(){
+    withUndo('Hodnoty vymazány.',function(){state.vals=emptyVals();state.example=false;state.loops=emptyLoops();state.expr=emptyExpr();state.alg=emptyAlg();state.tab=emptyTabs();});
+  });
+  $('exBtn').addEventListener('click',function(){
+    withUndo('Ukázka načtena.',function(){var keep=state.sym;state=defaultState();state.sym=keep;});
+  });
+
+  /* ---------- photo of the maps ---------- */
+  var EXPORT_CSS=''
+    +'.kr{stroke:#C3CCD8;stroke-width:1}.kc0{fill:#FFFFFF}.kc1{fill:#D8E4FA}.kc2{fill:#FBEFD2}'
+    +'.kbord{fill:none;stroke:#5F6B7B;stroke-width:2}.ksep{stroke:#5F6B7B;stroke-width:2}'
+    +'.kbar{stroke:#1F4FBF;stroke-width:2.6;stroke-linecap:round}'
+    +'.klab{fill:#18202B;font:italic 500 14px "IBM Plex Sans",system-ui,"Segoe UI",Arial,sans-serif}'
+    +'.kname{fill:#1F4FBF;font:600 16px "IBM Plex Sans",system-ui,"Segoe UI",Arial,sans-serif}'
+    +'.ksuf{fill:#586374;font:500 13px "IBM Plex Sans",system-ui,"Segoe UI",Arial,sans-serif}'
+    +'.kslash{stroke:#5F6B7B;stroke-width:1.5}'
+    +'.kv{font:600 24px "IBM Plex Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;text-anchor:middle}'
+    +'.kv0{fill:#8791A0;font-weight:400}.kv1{fill:#1B45B0}.kv2{fill:#85570A}'
+    +'.ki{font:400 10.5px "IBM Plex Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;fill:#6B7685;text-anchor:end}'
+    +'.ktitle{fill:#18202B;font:600 20px "IBM Plex Sans",system-ui,"Segoe UI",Arial,sans-serif}'
+    +'.ksub{fill:#586374;font:400 13px "IBM Plex Sans",system-ui,"Segoe UI",Arial,sans-serif}'
+    +'.kcap{fill:#586374;font:600 11.5px "IBM Plex Sans",system-ui,"Segoe UI",Arial,sans-serif;letter-spacing:.07em}'
+    +'.knote{fill:#18202B;font:500 13px "IBM Plex Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace}'
+    +'.kleg{fill:#586374;font:400 12.5px "IBM Plex Sans",system-ui,"Segoe UI",Arial,sans-serif}'
+    +'.knsub{fill:#18202B;font:500 9.5px "IBM Plex Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace}'
+    +'.kover{stroke:#18202B;stroke-width:1.4}'
+    +'.kl-fill{fill-opacity:.14;stroke:none}.kl-line{fill:none;stroke-width:2.8;stroke-linecap:round}';
+
+  function chunkWrap(text,maxChars){
+    var parts=[],cur='',i;
+    for(i=0;i<text.length;i++){cur+=text.charAt(i);if(text.charAt(i)===','){parts.push(cur);cur='';}}
+    if(cur)parts.push(cur);
+    var lines=[],line='';
+    parts.forEach(function(p){
+      if((line+p).length>maxChars&&line.trim()){lines.push(line);line='    '+p;}
+      else line+=p;
+    });
+    if(line)lines.push(line);
+    return lines;
+  }
+  /* expressions drawn with real overlines for the photo */
+  var CW=7.8,SW=5.6;
+  function nameAtoms(name){
+    var out=[],re=/([A-Za-z])(\d+)/g,last=0,m;
+    while((m=re.exec(name))){
+      if(m.index>last)out.push({k:'t',s:name.slice(last,m.index)});
+      out.push({k:'v',s:m[1],sub:m[2],neg:false});last=m.index+m[0].length;
+    }
+    if(last<name.length)out.push({k:'t',s:name.slice(last)});
+    return out;
+  }
+  function termAtoms(t,mode){
+    if(!t.length)return [{k:'t',s:mode==='dnf'?'1':'0'}];
+    var out=[],par=mode==='knf'&&t.length>1;
+    if(par)out.push({k:'t',s:'('});
+    t.forEach(function(l,idx){
+      if(idx)out.push({k:'t',s:mode==='dnf'?'·':' + '});
+      out.push({k:'v',s:'x',sub:String(l.b),neg:l.neg});
+    });
+    if(par)out.push({k:'t',s:')'});
+    return out;
+  }
+  function atomW(a){return a.k==='t'?a.s.length*CW:CW*a.s.length+SW*a.sub.length;}
+  function groupW(g){return g.reduce(function(sum,a){return sum+atomW(a);},0);}
+  function toksToTree(toks){
+    var root={k:'g',neg:false,paren:false,items:[]},stack=[root];
+    toks.forEach(function(t){
+      var top=stack[stack.length-1];
+      if(t==='N('||t==='('){var g={k:'g',neg:t==='N(',paren:t==='(',items:[]};top.items.push(g);stack.push(g);}
+      else if(t===')'){if(stack.length>1)stack.pop();else top.items.push({k:'t',s:')'});}
+      else if(t==='*')top.items.push({k:'t',s:'·',op:true});
+      else if(t==='+')top.items.push({k:'t',s:' + ',op:true});
+      else{var m=LITRE.exec(t);top.items.push(m?{k:'v',s:'x',sub:m[2],neg:!!m[1]}:{k:'t',s:t});}
+    });
+    return root;
+  }
+  function heightOf(n){
+    if(n.k==='v')return n.neg?1:0;
+    if(n.k!=='g')return 0;
+    var h=0;n.items.forEach(function(c){h=Math.max(h,heightOf(c));});
+    n.h=n.neg?h+1:h;return n.h;
+  }
+  function layoutTree(prefix,tree,maxW){
+    heightOf(tree);
+    var seq=[],lines=[],line={atoms:[],bars:[],lvl:0},x=0,open=[],indent=CW*4,si,s2;
+    prefix.forEach(function(a){seq.push({ty:'a',a:a});});
+    (function walk(g){
+      g.items.forEach(function(c){
+        if(c.k==='g'){
+          if(c.paren)seq.push({ty:'a',a:{k:'t',s:'('}});
+          if(c.neg)seq.push({ty:'o',g:c});
+          walk(c);
+          if(c.neg)seq.push({ty:'c',g:c});
+          if(c.paren)seq.push({ty:'a',a:{k:'t',s:')'}});
+        }else seq.push({ty:'a',a:c});
+      });
+    })(tree);
+    var GAPX=5;
+    for(si=0;si<seq.length;si++){
+      s2=seq[si];
+      if(s2.ty==='a'){
+        if(s2.a.op&&line.atoms.length){
+          var cw=atomW(s2.a),sj=si+1;
+          while(sj<seq.length&&!(seq[sj].ty==='a'&&seq[sj].a.op)){cw+=seq[sj].ty==='a'?atomW(seq[sj].a):GAPX;sj++;}
+          if(x+cw>maxW&&x>indent+1){
+            open.forEach(function(o){line.bars.push({x1:o.x0,x2:x,lvl:o.g.h});});
+            lines.push(line);line={atoms:[],bars:[],lvl:0};x=indent;
+            open.forEach(function(o){o.x0=x;line.lvl=Math.max(line.lvl,o.g.h);});
+          }
+        }
+        line.atoms.push({a:s2.a,x:x});x+=atomW(s2.a);
+        if(s2.a.k==='v'&&s2.a.neg)line.lvl=Math.max(line.lvl,1);
+      }else if(s2.ty==='o'){x+=GAPX;open.push({g:s2.g,x0:x});line.lvl=Math.max(line.lvl,s2.g.h);}
+      else{var o=open.pop();if(o)line.bars.push({x1:o.x0,x2:x,lvl:o.g.h});x+=GAPX;}
+    }
+    while(open.length){var o2=open.pop();line.bars.push({x1:o2.x0,x2:x,lvl:o2.g.h});}
+    lines.push(line);
+    return lines;
+  }
+  function layoutTok(f,toks,maxW){
+    var head=nameAtoms(state.fnames[f]).concat([{k:'t',s:' = '}]);
+    return layoutTree(head,toksToTree(toks),maxW);
+  }
+  function drawAtom(a,x,y){
+    if(a.k==='t')return '<text class="knote" xml:space="preserve" x="'+x+'" y="'+y+'">'+esc(a.s)+'</text>';
+    var w=CW*a.s.length,out='<text class="knote" x="'+x+'" y="'+y+'">'+esc(a.s)+'</text>'
+      +'<text class="knsub" x="'+(x+w)+'" y="'+(y+3.5)+'">'+esc(a.sub)+'</text>';
+    if(a.neg)out+='<line class="kover" x1="'+x+'" y1="'+(y-12.5)+'" x2="'+(x+w+SW*a.sub.length)+'" y2="'+(y-12.5)+'"/>';
+    return out;
+  }
+  function drawLayout(lines,x0,y){
+    var out='';
+    lines.forEach(function(L){
+      if(L.lvl>1)y+=5*(L.lvl-1);
+      L.atoms.forEach(function(p){out+=drawAtom(p.a,x0+p.x,y);});
+      L.bars.forEach(function(b){var by=y-12.5-5*(b.lvl-1);out+='<line class="kover" x1="'+(x0+b.x1)+'" y1="'+by+'" x2="'+(x0+b.x2)+'" y2="'+by+'"/>';});
+      y+=24;
+    });
+    return {svg:out,y:y};
+  }
+  function buildExportSVG(){
+    var n=state.n,F=state.fcount,G=geom(n),pad=26,gap=24,rowMax=n===5?1060:880;
+    var items=[],x=pad,y=pad+64,rowH=0,right=0,f;
+    for(f=0;f<F;f++){
+      var modes=exportModes(f),gw=modes.length*G.w+(modes.length-1)*gap;
+      if(x>pad&&x+gw>pad+rowMax){x=pad;y+=rowH+gap;rowH=0;}
+      modes.forEach(function(m){
+        items.push({f:f,x:x,y:y,mode:m});
+        right=Math.max(right,x+G.w);
+        x+=G.w+gap;rowH=Math.max(rowH,G.h);
+      });
+    }
+    var W=Math.max(right+pad,560);
+    var need=0,exW=function(f,toks){
+      if(!toks||!toks.length)return;
+      layoutTok(f,toks,1e6).forEach(function(L){L.atoms.forEach(function(q){need=Math.max(need,q.x+atomW(q.a));});});
+    };
+    for(f=0;f<F;f++){
+      ['dnf','knf'].forEach(function(m){exW(f,state.expr[f][m]);});
+      ['nand','nor'].forEach(function(t){var T=state.alg[f][t];if(T.steps.some(function(st){return st.toks.length;})){exW(f,state.expr[f][T.base]);T.steps.forEach(function(st){exW(f,st.toks);});}});
+    }
+    W=Math.max(W,Math.min(1000,Math.ceil(need)+pad*2+16));
+    var yy=y+rowH+36,maxChars=Math.floor((W-pad*2)/7.9),body='',anyX=false,i;
+    for(f=0;f<F;f++)for(i=0;i<size();i++)if(state.vals[f][i]===2)anyX=true;
+    items.forEach(function(it){body+='<g transform="translate('+it.x+' '+it.y+')">'+mapInner(it.f,exportOpt(it.f,it.mode))+'</g>';});
+    body+='<text class="kcap" x="'+pad+'" y="'+yy+'">ZÁPIS FUNKCÍ</text>';
+    yy+=26;
+    for(f=0;f<F;f++){
+      var N=notation(f);
+      [N.disj,N.conj].forEach(function(t){
+        chunkWrap(t,maxChars).forEach(function(l){
+          body+='<text class="knote" xml:space="preserve" x="'+pad+'" y="'+yy+'">'+subSVG(l)+'</text>';
+          yy+=19;
+        });
+      });
+      yy+=9;
+    }
+    var anyExpr=false,anyLoops=false;
+    for(f=0;f<F;f++){['dnf','knf'].forEach(function(m){if(state.expr[f][m].length)anyExpr=true;});if(validLoops(f,'dnf').length||validLoops(f,'knf').length)anyLoops=true;}
+    if(anyExpr){
+      body+='<text class="kcap" x="'+pad+'" y="'+yy+'">MINIMALIZACE</text>';
+      yy+=24;
+      for(f=0;f<F;f++)['dnf','knf'].forEach(function(m){
+        if(!state.expr[f][m].length)return;
+        body+='<text class="kleg" x="'+pad+'" y="'+yy+'">'+esc(state.fnames[f]+' – '+(m==='dnf'?'součtový tvar (smyčky kolem 1)':'součinový tvar (smyčky kolem 0)'))+'</text>';
+        yy+=24;
+        var R=drawLayout(layoutTok(f,state.expr[f][m],W-pad*2),pad,yy);body+=R.svg;yy=R.y+6;
+      });
+    }
+    var anyAlg=false,TRK=[['nand','NAND-NAND ze součtu'],['nor','NOR-NOR ze součinu']];
+    var hasSteps=function(T){return T.steps.some(function(st){return st.toks.length;});};
+    for(f=0;f<F;f++)TRK.forEach(function(t){if(hasSteps(state.alg[f][t[0]]))anyAlg=true;});
+    if(anyAlg){
+      body+='<text class="kcap" x="'+pad+'" y="'+yy+'">ALGEBRAICKÉ ÚPRAVY</text>';
+      yy+=24;
+      for(f=0;f<F;f++)TRK.forEach(function(t){
+        var AL=state.alg[f][t[0]];
+        if(!hasSteps(AL))return;
+        body+='<text class="kleg" x="'+pad+'" y="'+yy+'">'+esc(state.fnames[f]+' – '+t[1])+'</text>';
+        yy+=24;
+        if(state.expr[f][AL.base].length){var R0=drawLayout(layoutTok(f,state.expr[f][AL.base],W-pad*2),pad,yy);body+=R0.svg;yy=R0.y+4;}
+        AL.steps.forEach(function(st,si){
+          if(!st.toks.length)return;
+          body+='<text class="kleg" x="'+pad+'" y="'+yy+'">'+esc('Krok '+(si+1)+(st.law?' – '+st.law:''))+'</text>';
+          yy+=22;
+          var R1=drawLayout(layoutTok(f,st.toks,W-pad*2),pad,yy);body+=R1.svg;yy=R1.y+4;
+        });
+        yy+=6;
+      });
+    }
+    yy+=6;
+    var legend=['Čára u okraje mapy označuje pole, kde se příslušná proměnná rovná 1. Menší číslo v rohu pole je jeho index.'];
+    if(anyLoops)legend.push('Barevné smyčky obklopují sousední pole se stejnou hodnotou.');
+    if(anyExpr||anyAlg)legend.push('Čára nad proměnnou nebo nad skupinou značí negaci.');
+    if(anyX)legend.push('X = neurčený stav');
+    var lmax=Math.floor((W-pad*2)/6.4);
+    legend.forEach(function(t){
+      var words=t.split(' '),cur='',lines=[];
+      words.forEach(function(w){var j=(cur+' '+w).trim();if(j.length>lmax&&cur){lines.push(cur);cur=w;}else cur=j;});
+      if(cur)lines.push(cur);
+      lines.forEach(function(l){body+='<text class="kleg" x="'+pad+'" y="'+yy+'">'+esc(l)+'</text>';yy+=18;});
+    });
+    var H=yy+pad-8;
+    var title='Karnaughovy mapy',sub=n+' '+(n<5?'proměnné':'proměnných')+'   ·   '+F+' '+(F===1?'funkce':(F<5?'funkce':'funkcí'));
+    var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">'
+      +'<style>'+EXPORT_CSS+'</style><rect width="'+W+'" height="'+H+'" fill="#FFFFFF"/>'
+      +'<text class="ktitle" x="'+pad+'" y="'+(pad+14)+'">'+title+'</text>'
+      +'<text class="ksub" x="'+pad+'" y="'+(pad+38)+'">'+esc(sub)+'</text>'
+      +body+'</svg>';
+    return {svg:svg,w:W,h:H};
+  }
+  function svgToPng(res){
+    return new Promise(function(resolve,reject){
+      var img=new Image();
+      img.onload=function(){
+        try{
+          var S=2,cv=document.createElement('canvas');
+          cv.width=res.w*S;cv.height=res.h*S;
+          var c=cv.getContext('2d');
+          c.fillStyle='#FFFFFF';c.fillRect(0,0,cv.width,cv.height);
+          c.drawImage(img,0,0,cv.width,cv.height);
+          resolve(cv.toDataURL('image/png'));
+        }catch(e){reject(e);}
+      };
+      img.onerror=function(){reject(new Error('svg'));};
+      img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(res.svg);
+    });
+  }
+  function dataURLtoBlob(u){
+    var bin=atob(u.split(',')[1]),a=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);
+    return new Blob([a],{type:'image/png'});
+  }
+  async function openShot(){
+    var btn=$('shotBtn');
+    btn.disabled=true;opener=btn;
+    try{
+      var url=await svgToPng(buildExportSVG());
+      lastBlob=dataURLtoBlob(url);
+      $('shotImg').src=url;
+      $('shotStatus').textContent='';
+      $('shot').hidden=false;
+      $('saveBtn').focus();
+      autoSend();
+    }catch(e){
+      showToast('Fotku se nepodařilo vytvořit.');
+    }finally{
+      btn.disabled=false;
+    }
+  }
+  function closeShot(){$('shot').hidden=true;if(opener)opener.focus();}
+  /* ---------- cheat sheet of laws (side panel) ---------- */
+  var LAWTXT=[
+   ['Dvojí negace','{{x}} = x','Dvě čáry nad sebou se zruší. Tímhle začínáš u NAND-NAND i NOR-NOR.'],
+   ['De Morganovy zákony','{x + y} = ~x * ~y\n{x * y} = ~x + ~y','Čára se „rozbije“ a znaménko se změní: + na · a · na +. Každá část dostane vlastní čáru.'],
+   ['Komplementarita','x * ~x = 0\nx + ~x = 1',''],
+   ['Neutralita 0 a 1','x * 1 = x\nx + 0 = x',''],
+   ['Agresivita 0 a 1','x * 0 = 0\nx + 1 = 1',''],
+   ['Idempotence (opakování)','x * x = x\nx + x = x',''],
+   ['Komutativní zákon','x * y = y * x\nx + y = y + x','Pořadí nehraje roli.'],
+   ['Asociativní zákon','(x * y) * z = x * (y * z)\n(x + y) + z = x + (y + z)','Na závorkách u samých · nebo samých + nezáleží.'],
+   ['Distributivní zákon (vytýkání)','x * (y + z) = x * y + x * z\nx + y * z = (x + y) * (x + z)','Zleva doprava roznásobíš, zprava doleva vytkneš.'],
+   ['Absorpce','x + x * y = x\nx * (x + y) = x','Delší člen, který obsahuje ten kratší, zmizí.'],
+   ['Absorpce negace','x + ~x * y = x + y\nx * (~x + y) = x * y','Negovaná proměnná se v druhém členu ztratí.'],
+   ['Zákon spojení','x * y + x * ~y = x\n(x + y) * (x + ~y) = x','To, co dělají smyčky v mapě: proměnná, která se mění, vypadne.'],
+   ['Absorpce konsenzu','x * y + ~x * z + y * z = x * y + ~x * z\n(x + y) * (~x + z) * (y + z) = (x + y) * (~x + z)','Třetí člen, který vznikl „spojením“ prvních dvou, je navíc.']
+  ];
+  var LAWREC=[
+   ['Postup NAND-NAND (ze součtu)','1) celý součet dej pod dvě čáry\n2) vnitřní čáru rozbij De Morganem: + se změní na ·, každý člen dostane svou čáru\n3) vnější čára zůstane nad celým součinem'],
+   ['Postup NOR-NOR (ze součinu)','1) celý součin dej pod dvě čáry\n2) vnitřní čáru rozbij De Morganem: · se změní na +, každá závorka dostane svou čáru\n3) vnější čára zůstane nad celým součtem']
+  ];
+  function lawMarkup(t){
+    return t.replace(/\n/g,'<br>').replace(/\{/g,'<span class="ovg">').replace(/\}/g,'</span>').replace(/~([xyz])/g,'<span class="ov">$1</span>').replace(/\*/g,'·');
+  }
+  function renderLaws(){
+    var h='<div class="lc"><h2>Zákony</h2><button type="button" class="btn sm quiet" id="lawClose">Zavřít</button></div>';
+    LAWREC.forEach(function(r){h+='<div class="lg"><span class="ln">'+r[0]+'</span><span class="lt">'+r[1].replace(/\n/g,'<br>')+'</span></div>';});
+    LAWTXT.forEach(function(l){h+='<div class="lg"><span class="ln">'+l[0]+'</span><span class="lf">'+lawMarkup(l[1])+'</span>'+(l[2]?'<span class="lt">'+l[2]+'</span>':'')+'</div>';});
+    h+='<p class="lt">x, y, z jsou libovolné proměnné nebo celé výrazy. Zákony platí i pro skupiny pod čarou.</p>';
+    $('laws').innerHTML=h;
+    $('lawClose').addEventListener('click',function(){setLaws(false);});
+  }
+  function setLaws(on){
+    $('laws').hidden=!on;$('work').classList.toggle('withlaws',on);$('lawBtn').setAttribute('aria-pressed',on?'true':'false');
+    try{localStorage.setItem('km-laws-v1',on?'1':'0');}catch(e){}
+  }
+  renderLaws();
+  $('lawBtn').addEventListener('click',function(){setLaws($('laws').hidden);});
+  try{if(localStorage.getItem('km-laws-v1')==='1')setLaws(true);}catch(e){}
+  $('shotBtn').addEventListener('click',openShot);
+  $('shotClose').addEventListener('click',closeShot);
+  $('shot').addEventListener('click',function(e){if(e.target===$('shot'))closeShot();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('shot').hidden)closeShot();});
+  var FILENAME='karnaughovy-mapy.png';
+  var assets=null;
+  var capsReady=(async function(){
+    try{
+      if(window.claude&&window.claude.use){
+        downloads=await window.claude.use('downloads');
+        assets=await window.claude.use('assets');
+      }
+    }catch(e){}
+  })();
+  function say(t){$('shotStatus').textContent=t;}
+  function errCode(e){return (e&&(e.code||e.name))||'neznámá chyba';}
+  async function saveFile(){
+    await capsReady;
+    if(!downloads)return {ok:false,why:'tato stránka teď nemá povolené ukládání souborů'};
+    try{await downloads.save({filename:FILENAME,data:lastBlob});return {ok:true};}
+    catch(e){return {ok:false,declined:!!(e&&e.code==='declined'),why:'kód '+errCode(e)};}
+  }
+  async function backupCopy(){
+    await capsReady;
+    if(!assets)return false;
+    try{await assets.upload(lastBlob,{type:'image/png'});return true;}catch(e){return false;}
+  }
+  function saveMsg(r){
+    return r.ok?('Uloženo jako '+FILENAME+'. Přilož ho do chatu.'):(r.declined?'Ukládání jsi zrušil.':'Soubor se nepodařilo uložit ('+r.why+').');
+  }
+  async function autoSend(){
+    say('Ukládám…');
+    var r=await saveFile();
+    var b=await backupCopy();
+    say(saveMsg(r)+(b?' Kopie obrázku je zároveň uložená u stránky, Claude ji umí načíst sám.':''));
+  }
+  $('saveBtn').addEventListener('click',async function(){say('Ukládám…');say(saveMsg(await saveFile()));});
+  $('copyBtn').addEventListener('click',async function(){
+    try{
+      if(!(window.ClipboardItem&&navigator.clipboard&&navigator.clipboard.write))throw {name:'schránka není dostupná'};
+      await navigator.clipboard.write([new ClipboardItem({'image/png':lastBlob})]);
+      say('Obrázek je ve schránce. Vlož ho do chatu (Ctrl+V).');
+    }catch(e){
+      say('Kopírování tady nejde ('+errCode(e)+'). Zkus Uložit PNG, nebo na obrázek klikni pravým tlačítkem a zkopíruj ho.');
+    }
+  });
+
+  fullRender();
+  if(window.__KM_TEST__)window.__KM_TEST__({LAYOUT:LAYOUT,geom:geom,buildExportSVG:buildExportSVG,runsOf:runsOf,getState:function(){return state;},setState:function(s){state=normState(s);fullRender();},solveMin:solveMin,cubeInfo:cubeInfo,loopState:loopState,allowedOf:allowedOf,exprPlain:exprPlain,primesOf:primesOf,checkLoops:checkLoops,addLoop:addLoop,selSet:selSet,loopMarkup:loopMarkup,layoutTok:layoutTok,parseExpr:parseExpr,checkExpr:checkExpr,parseGen:parseGen,vecOf:vecOf,formCheck:formCheck,checkAlg:checkAlg,RULES:RULES,nodeAt:nodeAt,replaceAt:replaceAt,normTree:normTree,toksOf:toksOf,cl:cl,keyOf:keyOf});
+})();
+</script>
+
+</body></html>
