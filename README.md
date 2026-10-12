@@ -1,10 +1,11 @@
-https://ondrejvajda.github.io/logic-circuit-design/
 
 # Logic Circuit Design
 
 Interactive web tools for learning, designing, and simulating digital logic circuits.
 
-Created for the *Základy digitálních systémů* (Fundamentals of Digital Systems) course to help students practice the process of designing combinational logic circuits, from truth tables and Karnaugh maps to circuit implementation.
+**[Live Demo](https://ondrejvajda.github.io/logic-circuit-design/)**
+
+Created for the *Základy digitálních systémů* (Fundamentals of Digital Systems) course to help students practice designing combinational logic circuits, from truth tables and Karnaugh maps to circuit implementation.
 
 ## Features
 
@@ -31,15 +32,17 @@ The project includes three interactive tools:
 
 ## Getting Started
 
-No installation or build process is required.
+Try the application directly using the **[Live Demo](https://ondrejvajda.github.io/logic-circuit-design/)**.
+
+Alternatively, run it locally:
 
 1. Clone or download the repository.
 2. Open `index.html` in your browser.
 3. Select a tool and start practicing.
 
-The application is built with **HTML, CSS, and JavaScript** and runs directly in a modern web browser.
+The application is built with **HTML, CSS, and JavaScript** and runs directly in a modern web browser. No installation or build process is required.
 
-> The user interface is in Czech.
+> **Note:** The user interface is in Czech.
 
 ## Contributing
 
