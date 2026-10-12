@@ -1,3 +1,5 @@
+https://ondrejvajda.github.io/logic-circuit-design/
+
 # Logic Circuit Design
 
 Interactive web tools for learning, designing, and simulating digital logic circuits.
